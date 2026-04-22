@@ -44,6 +44,7 @@ interface CompozeState {
   sendMessage: (toUserId: string, content: string) => void;
   postFeed: (content: string) => void;
   toggleSongHidden: (songId: string) => void;
+  deleteSong: (songId: string) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
