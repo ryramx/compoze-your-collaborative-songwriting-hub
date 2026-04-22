@@ -1,15 +1,34 @@
-import { useState } from "react";
-import { MapContainer, TileLayer, CircleMarker, Popup } from "react-leaflet";
+import { useState, useMemo } from "react";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
 import { useCompoze } from "@/store/compozeStore";
 import { Card } from "@/components/ui/card";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { MapPin } from "lucide-react";
+import "leaflet/dist/leaflet.css";
 
 export default function MapPage() {
   const users = useCompoze((s) => s.users);
   const [active, setActive] = useState(users[0]);
+
+  const markers = useMemo(
+    () =>
+      users.map((u) => {
+        const icon = L.divIcon({
+          html: `<div class="composer-pin" style="border-color: hsl(var(--author-${u.authorColor}))">
+                   <img src="${u.avatar}" alt="${u.name}" />
+                 </div>`,
+          className: "",
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+          popupAnchor: [0, -22],
+        });
+        return { user: u, icon };
+      }),
+    [users],
+  );
 
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4 md:p-6">
@@ -22,7 +41,7 @@ export default function MapPage() {
 
       <div className="grid gap-4 lg:grid-cols-[1fr_320px]">
         <Card className="overflow-hidden border-border/60 bg-card p-0">
-          <div className="h-[70vh] w-full">
+          <div className="h-[60vh] w-full md:h-[70vh]">
             <MapContainer
               center={[-15, -47]}
               zoom={3}
@@ -34,24 +53,23 @@ export default function MapPage() {
                 attribution='&copy; OpenStreetMap'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
-              {users.map((u) => (
-                <CircleMarker
+              {markers.map(({ user: u, icon }) => (
+                <Marker
                   key={u.id}
-                  center={[u.location.lat, u.location.lng]}
-                  radius={10}
-                  pathOptions={{
-                    color: `hsl(var(--author-${u.authorColor}))`,
-                    fillColor: `hsl(var(--author-${u.authorColor}))`,
-                    fillOpacity: 0.7,
-                    weight: 2,
-                  }}
+                  position={[u.location.lat, u.location.lng]}
+                  icon={icon}
                   eventHandlers={{ click: () => setActive(u) }}
                 >
                   <Popup>
-                    <div className="font-semibold">{u.name}</div>
-                    <div className="text-xs">{u.location.city}, {u.location.country}</div>
+                    <div className="flex items-center gap-3">
+                      <img src={u.avatar} alt={u.name} className="h-10 w-10 rounded-full object-cover" />
+                      <div>
+                        <div className="font-semibold">{u.name}</div>
+                        <div className="text-xs text-muted-foreground">{u.location.city}, {u.location.country}</div>
+                      </div>
+                    </div>
                   </Popup>
-                </CircleMarker>
+                </Marker>
               ))}
             </MapContainer>
           </div>

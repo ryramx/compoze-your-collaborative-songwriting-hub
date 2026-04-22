@@ -14,6 +14,7 @@ import Feed from "./pages/app/Feed";
 import Messages from "./pages/app/Messages";
 import MapPage from "./pages/app/Map";
 import Profile from "./pages/app/Profile";
+import Trash from "./pages/app/Trash";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/messages" element={<Messages />} />
             <Route path="/map" element={<MapPage />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/trash" element={<Trash />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
-  Plus,
   Trash2,
   Type,
   Music2,
@@ -11,7 +10,10 @@ import {
   UserPlus,
   Users,
   Wifi,
-  Save,
+  Share2,
+  Tag,
+  X,
+  Check,
 } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
@@ -24,11 +26,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import {
   Dialog,
   DialogContent,
@@ -63,7 +60,7 @@ const blockTypeIcon = {
 interface FakeCursor {
   userId: string;
   blockId: string;
-  pos: number; // 0..1 of block width
+  pos: number;
 }
 
 export default function SongEditor() {
@@ -80,12 +77,13 @@ export default function SongEditor() {
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
   const setContribution = useCompoze((s) => s.setContribution);
 
-  // Simulated live cursors of other collaborators
   const otherCollaborators = useMemo(
     () => song?.collaborators.filter((c) => c.userId !== me.id).map((c) => c.userId) ?? [],
     [song?.collaborators, me.id],
   );
   const [cursors, setCursors] = useState<FakeCursor[]>([]);
+  const [savingPulse, setSavingPulse] = useState(false);
+  const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
     if (!song || otherCollaborators.length === 0) {
@@ -105,6 +103,14 @@ export default function SongEditor() {
     return () => clearInterval(t);
   }, [song?.id, otherCollaborators]);
 
+  // Pulse "saving" indicator briefly whenever song updates
+  useEffect(() => {
+    if (!song) return;
+    setSavingPulse(true);
+    const t = setTimeout(() => setSavingPulse(false), 900);
+    return () => clearTimeout(t);
+  }, [song?.updatedAt]);
+
   if (!song) {
     return (
       <div className="mx-auto max-w-3xl p-8 text-center">
@@ -119,50 +125,69 @@ export default function SongEditor() {
   }
 
   const totalPercent = song.collaborators.reduce((acc, c) => acc + c.percentage, 0);
+  const tags = song.tags ?? [];
+
+  const addTag = () => {
+    const t = tagInput.trim();
+    if (!t) return;
+    if (tags.includes(t)) return;
+    updateSong(song.id, { tags: [...tags, t] });
+    setTagInput("");
+  };
+  const removeTag = (t: string) => updateSong(song.id, { tags: tags.filter((x) => x !== t) });
+
+  const handleShare = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(`${window.location.origin}/songs/${song.id}/edit`);
+    }
+    toast.success("Link da canção copiado ✨");
+  };
+  const handleDelete = () => {
+    toast.success("Canção movida para a Lixeira");
+    navigate("/songs");
+  };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] min-h-0 flex-col">
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/80 px-4 py-3 backdrop-blur-xl md:px-6">
+    <div className="flex min-h-[calc(100vh-4rem)] flex-col">
+      {/* Toolbar — desktop only decorative bits */}
+      <div className="sticky top-16 z-20 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur-xl md:px-6">
         <Button variant="ghost" size="sm" onClick={() => navigate("/songs")}>
-          <ArrowLeft className="h-4 w-4" /> Canções
+          <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Canções</span>
         </Button>
+
         <Input
           value={song.title}
           onChange={(e) => updateSong(song.id, { title: e.target.value })}
-          className="h-9 max-w-xs border-0 bg-transparent px-2 font-display text-lg font-semibold focus-visible:ring-1"
-        />
-        <StatusBadge status={song.status} />
-        <Select
-          value={song.status}
-          onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
-        >
-          <SelectTrigger className="h-8 w-32 rounded-full border-border/60 bg-muted/40 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {statusOptions.map((s) => (
-              <SelectItem key={s.value} value={s.value}>
-                {s.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Input
-          value={song.key ?? ""}
-          onChange={(e) => updateSong(song.id, { key: e.target.value })}
-          placeholder="Tom"
-          className="h-8 w-16 rounded-full bg-muted/40 text-center font-mono text-xs"
-        />
-        <Input
-          value={song.bpm ?? ""}
-          onChange={(e) => updateSong(song.id, { bpm: Number(e.target.value) || undefined })}
-          placeholder="BPM"
-          className="h-8 w-20 rounded-full bg-muted/40 text-center font-mono text-xs"
+          className="h-9 max-w-[12rem] flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:max-w-xs md:text-lg"
         />
 
-        <div className="ml-auto flex items-center gap-3">
+        {/* Saving indicator */}
+        <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
+          <span className={cn("relative flex h-1.5 w-1.5", savingPulse && "animate-pulse")}>
+            <span className="absolute inline-flex h-full w-full rounded-full bg-status-finalizada/60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-finalizada" />
+          </span>
+          <span className="hidden sm:inline">{savingPulse ? "Salvando…" : "Salvo"}</span>
+        </div>
+
+        <div className="ml-auto hidden items-center gap-2 md:flex">
+          <StatusBadge status={song.status} />
+          <Select
+            value={song.status}
+            onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
+          >
+            <SelectTrigger className="h-8 w-32 rounded-full border-border/60 bg-muted/40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {statusOptions.map((s) => (
+                <SelectItem key={s.value} value={s.value}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           {/* Live indicator */}
           <div className="flex items-center gap-2 rounded-full bg-author-3/10 px-3 py-1 text-xs text-author-3">
             <span className="relative flex h-2 w-2">
@@ -172,7 +197,6 @@ export default function SongEditor() {
             Ao vivo · {song.collaborators.length}
           </div>
 
-          {/* Active collaborators */}
           <div className="flex -space-x-2">
             {song.collaborators.map((c) => {
               const u = getUser(c.userId);
@@ -185,7 +209,6 @@ export default function SongEditor() {
             })}
           </div>
 
-          {/* Invite */}
           <CollaboratorsDialog
             songId={song.id}
             collaborators={song.collaborators}
@@ -195,19 +218,108 @@ export default function SongEditor() {
             totalPercent={totalPercent}
           />
 
-          <Button
-            size="sm"
-            onClick={() => toast.success("Tudo salvo automaticamente ✨")}
-            className="rounded-full bg-gradient-hero text-primary-foreground shadow-glow"
-          >
-            <Save className="h-4 w-4" /> Salvar
+          <Button size="sm" variant="outline" onClick={handleShare} className="rounded-full border-border/60">
+            <Share2 className="h-4 w-4" /> Compartilhar
           </Button>
         </div>
       </div>
 
       {/* Editor area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-3xl p-6 md:p-10">
+      <div className="flex-1">
+        <div className="mx-auto max-w-3xl p-4 md:p-10">
+          {/* Metadata header */}
+          <Card className="mb-6 border-border/60 bg-gradient-card p-4 md:p-5">
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+              <div>
+                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Autor</div>
+                <div className="flex items-center gap-2 truncate text-sm font-medium">
+                  <UserAvatar user={getUser(song.creatorId)} size="sm" />
+                  <span className="truncate">{getUser(song.creatorId)?.name}</span>
+                </div>
+              </div>
+              <div>
+                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Tom</div>
+                <Input
+                  value={song.key ?? ""}
+                  onChange={(e) => updateSong(song.id, { key: e.target.value })}
+                  placeholder="Ex: Am"
+                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
+                />
+              </div>
+              <div>
+                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Andamento</div>
+                <Input
+                  value={song.timeSignature ?? "4/4"}
+                  onChange={(e) => updateSong(song.id, { timeSignature: e.target.value })}
+                  placeholder="4/4"
+                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
+                />
+              </div>
+              <div>
+                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">BPM</div>
+                <Input
+                  type="number"
+                  value={song.bpm ?? ""}
+                  onChange={(e) => updateSong(song.id, { bpm: Number(e.target.value) || undefined })}
+                  placeholder="120"
+                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Mobile status select */}
+            <div className="mt-3 flex items-center gap-2 md:hidden">
+              <StatusBadge status={song.status} />
+              <Select
+                value={song.status}
+                onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
+              >
+                <SelectTrigger className="h-8 flex-1 rounded-full border-border/60 bg-background/40 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {statusOptions.map((s) => (
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Tags */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <Tag className="h-3.5 w-3.5 text-muted-foreground" />
+              {tags.map((t) => (
+                <span
+                  key={t}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs text-primary"
+                >
+                  #{t}
+                  <button onClick={() => removeTag(t)} aria-label={`Remover tag ${t}`}>
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              ))}
+              <div className="flex items-center gap-1">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); addTag(); }
+                  }}
+                  placeholder="Adicionar tag"
+                  className="h-7 w-32 rounded-full bg-background/40 px-3 text-xs"
+                />
+                {tagInput && (
+                  <Button size="icon" variant="ghost" className="h-6 w-6 rounded-full" onClick={addTag}>
+                    <Check className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          </Card>
+
           <div className="space-y-2">
             {song.blocks.map((b) => (
               <EditorBlock
@@ -286,6 +398,39 @@ export default function SongEditor() {
               })}
             </div>
           </Card>
+
+          {/* Mobile-only invite */}
+          <div className="mt-6 md:hidden">
+            <CollaboratorsDialog
+              songId={song.id}
+              collaborators={song.collaborators}
+              allUsers={allUsers}
+              onInvite={inviteCollaborator}
+              onSetPercentage={setContribution}
+              totalPercent={totalPercent}
+              fullWidth
+            />
+          </div>
+
+          {/* Mobile share + delete (large) — share above delete */}
+          <div className="mt-8 space-y-3 md:hidden">
+            <Button
+              onClick={handleShare}
+              variant="outline"
+              size="lg"
+              className="h-12 w-full rounded-2xl border-border/60 bg-background/40 text-base"
+            >
+              <Share2 className="h-5 w-5" /> Compartilhar
+            </Button>
+            <Button
+              onClick={handleDelete}
+              variant="destructive"
+              size="lg"
+              className="h-12 w-full rounded-2xl text-base"
+            >
+              <Trash2 className="h-5 w-5" /> Excluir canção
+            </Button>
+          </div>
         </div>
       </div>
     </div>
@@ -334,10 +479,15 @@ function EditorBlock({
     );
   }
 
+  // For chord lines, render chords in primary color above
   return (
     <div ref={ref} className="group relative">
       <div className="flex items-start gap-2">
-        <div className={cn("mt-2 grid h-6 w-6 place-items-center rounded-md", `bg-author-${authorColor}/15 text-author-${authorColor}`)}>
+        {/* Decorative type icon — hidden on mobile */}
+        <div className={cn(
+          "mt-2 hidden h-6 w-6 place-items-center rounded-md md:grid",
+          `bg-author-${authorColor}/15 text-author-${authorColor}`,
+        )}>
           <Icon className="h-3 w-3" />
         </div>
         <div className="relative flex-1">
@@ -353,13 +503,12 @@ function EditorBlock({
             }
             className={cn(
               "h-10 border-0 bg-transparent px-2 text-base focus-visible:ring-1",
-              block.type === "chord-line" && "chord text-primary",
+              block.type === "chord-line" && "chord text-primary font-semibold",
               block.type === "note" && "italic text-muted-foreground",
               `author-${authorColor}`,
               "rounded-md",
             )}
           />
-          {/* fake live cursors from other collaborators */}
           {cursors.map((c, i) => {
             const u = getUser(c.userId);
             if (!u) return null;
@@ -391,7 +540,7 @@ function EditorBlock({
         </Button>
       </div>
       {!isMine && (
-        <div className="ml-8 -mt-1 text-[10px] text-muted-foreground">
+        <div className="ml-2 -mt-1 text-[10px] text-muted-foreground md:ml-8">
           contribuição de <span className={cn(`text-author-${authorColor}`, "font-semibold")}>{authorName}</span>
         </div>
       )}
@@ -405,6 +554,7 @@ function CollaboratorsDialog({
   allUsers,
   onInvite,
   totalPercent,
+  fullWidth,
 }: {
   songId: string;
   collaborators: { userId: string; percentage: number }[];
@@ -412,17 +562,25 @@ function CollaboratorsDialog({
   onInvite: (songId: string, userId: string, percentage?: number) => void;
   onSetPercentage: (songId: string, userId: string, percentage: number) => void;
   totalPercent: number;
+  fullWidth?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const candidates = allUsers.filter((u) => !collaborators.some((c) => c.userId === u.id));
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline" className="rounded-full border-border/60">
-          <UserPlus className="h-4 w-4" /> Convidar
+        <Button
+          size={fullWidth ? "lg" : "sm"}
+          variant="outline"
+          className={cn(
+            "rounded-full border-border/60",
+            fullWidth && "h-12 w-full rounded-2xl",
+          )}
+        >
+          <UserPlus className="h-4 w-4" /> Convidar colaborador
         </Button>
       </DialogTrigger>
-      <DialogContent className="border-border/60 bg-card">
+      <DialogContent className="border-border/60 bg-card/95 backdrop-blur-xl">
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <Wifi className="h-4 w-4 text-author-3" />
@@ -451,7 +609,7 @@ function CollaboratorsDialog({
                   onInvite(songId, u.id, 0);
                   toast.success(`${u.name} entrou na sessão`);
                 }}
-                className="rounded-full bg-gradient-hero text-primary-foreground"
+                className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
               >
                 Convidar
               </Button>

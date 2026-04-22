@@ -68,6 +68,14 @@ export default {
           4: "hsl(var(--author-4))",
           5: "hsl(var(--author-5))",
         },
+        status: {
+          ideia: "hsl(var(--status-ideia))",
+          escrita: "hsl(var(--status-escrita))",
+          revisao: "hsl(var(--status-revisao))",
+          finalizada: "hsl(var(--status-finalizada))",
+          registrada: "hsl(var(--status-registrada))",
+          gravada: "hsl(var(--status-gravada))",
+        },
       },
       backgroundImage: {
         "gradient-hero": "var(--gradient-hero)",

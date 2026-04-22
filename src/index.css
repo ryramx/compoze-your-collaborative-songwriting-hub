@@ -10,8 +10,8 @@
 
 @layer base {
   :root {
-    /* Light tokens (fallback — app é dark first) */
-    --background: 222 35% 97%;
+    /* Light — branco gelo industrial */
+    --background: 210 40% 98%;
     --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
@@ -20,37 +20,51 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    --primary: 217 91% 60%;
-    --primary-foreground: 210 40% 98%;
-    --primary-glow: 199 95% 65%;
+    --primary: 214 95% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 199 95% 60%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 214 32% 94%;
     --secondary-foreground: 222 47% 11%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 214 32% 94%;
+    --muted-foreground: 215 16% 42%;
 
-    --accent: 199 95% 65%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 199 95% 55%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 55%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 214 32% 88%;
+    --input: 214 32% 88%;
+    --ring: 214 95% 50%;
 
-    --radius: 1rem;
+    --radius: 0.875rem;
 
-    /* Sidebar */
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 215 20% 75%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 215 20% 35%;
+    --sidebar-primary: 214 95% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 40% 12%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 30% 14%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-accent: 214 32% 94%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 214 32% 90%;
+    --sidebar-ring: 214 95% 50%;
+
+    /* Status — official palette */
+    --status-ideia: 220 15% 35%;       /* #4A5568 */
+    --status-escrita: 211 60% 50%;     /* #3182CE */
+    --status-revisao: 50 80% 52%;      /* #ECC94B */
+    --status-finalizada: 145 47% 42%;  /* #38A169 */
+    --status-registrada: 263 39% 50%;  /* #805AD5 */
+    --status-gravada: 38 74% 47%;      /* #D69E2E */
+
+    /* Author colors */
+    --author-1: 214 95% 50%;
+    --author-2: 280 75% 55%;
+    --author-3: 150 60% 40%;
+    --author-4: 35 85% 50%;
+    --author-5: 340 75% 55%;
   }
 
   .dark {
@@ -93,7 +107,15 @@
     --sidebar-border: 222 30% 12%;
     --sidebar-ring: 214 100% 62%;
 
-    /* Author colors for collaboration highlights */
+    /* Status — official palette (slight lift for dark) */
+    --status-ideia: 220 15% 60%;
+    --status-escrita: 211 80% 62%;
+    --status-revisao: 50 90% 60%;
+    --status-finalizada: 145 60% 52%;
+    --status-registrada: 263 60% 65%;
+    --status-gravada: 38 85% 58%;
+
+    /* Author colors */
     --author-1: 214 100% 65%;
     --author-2: 280 85% 70%;
     --author-3: 150 70% 55%;
@@ -131,6 +153,12 @@
       radial-gradient(circle at 0% 0%, hsl(214 100% 62% / 0.08), transparent 40%),
       radial-gradient(circle at 100% 100%, hsl(265 85% 65% / 0.06), transparent 40%);
     background-attachment: fixed;
+  }
+  /* Soften ambient glows on light mode */
+  :root:not(.dark) body {
+    background-image:
+      radial-gradient(circle at 0% 0%, hsl(214 95% 55% / 0.05), transparent 40%),
+      radial-gradient(circle at 100% 100%, hsl(265 75% 60% / 0.04), transparent 40%);
   }
 
   h1, h2, h3, h4, .font-display {
@@ -215,7 +243,7 @@
   background: hsl(var(--background)) !important;
   font-family: inherit;
 }
-.leaflet-tile {
+.dark .leaflet-tile {
   filter: invert(0.92) hue-rotate(180deg) brightness(0.9) contrast(0.95) saturate(0.7);
 }
 .leaflet-control-attribution,
@@ -224,6 +252,18 @@
   color: hsl(var(--foreground)) !important;
   border-color: hsl(var(--border)) !important;
 }
+
+/* Map avatar pin */
+.composer-pin {
+  background: hsl(var(--card));
+  border: 2px solid hsl(var(--primary));
+  border-radius: 9999px;
+  padding: 2px;
+  box-shadow: 0 6px 16px -6px hsl(var(--primary) / 0.5);
+  transition: transform 0.2s ease;
+}
+.composer-pin:hover { transform: scale(1.1); }
+.composer-pin img { width: 32px; height: 32px; border-radius: 9999px; object-fit: cover; display: block; }
 
 @keyframes float {
   0%, 100% { transform: translateY(0); }
