@@ -220,4 +220,14 @@ export const useCompoze = create<CompozeState>((set, get) => ({
     set({
       songs: get().songs.map((s) => (s.id === songId ? { ...s, hidden: !s.hidden } : s)),
     }),
+
+  deleteSong: (songId) =>
+    set({
+      songs: get().songs.filter((s) => s.id !== songId),
+      projects: get().projects.map((p) =>
+        p.songIds.includes(songId)
+          ? { ...p, songIds: p.songIds.filter((sid) => sid !== songId) }
+          : p,
+      ),
+    }),
 }));
