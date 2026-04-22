@@ -8,6 +8,7 @@ import {
   MessageCircle,
   MapPin,
   User as UserIcon,
+  Trash2,
 } from "lucide-react";
 import {
   Sidebar,
@@ -28,7 +29,7 @@ import { UserAvatar } from "@/components/compoze/UserAvatar";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Home", url: "/", icon: LayoutDashboard },
   { title: "Canções", url: "/songs", icon: Music4 },
   { title: "Pastas", url: "/folders", icon: FolderTree },
   { title: "Projetos", url: "/projects", icon: Disc3 },
@@ -38,6 +39,7 @@ const socialItems = [
   { title: "Feed", url: "/feed", icon: Newspaper },
   { title: "Mensagens", url: "/messages", icon: MessageCircle },
   { title: "Mapa", url: "/map", icon: MapPin },
+  { title: "Lixeira", url: "/trash", icon: Trash2 },
 ];
 
 export function AppSidebar() {
