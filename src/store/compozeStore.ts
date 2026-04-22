@@ -43,6 +43,7 @@ interface CompozeState {
   toggleFollow: (userId: string) => void;
   sendMessage: (toUserId: string, content: string) => void;
   postFeed: (content: string) => void;
+  toggleSongHidden: (songId: string) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -212,5 +213,10 @@ export const useCompoze = create<CompozeState>((set, get) => ({
         },
         ...get().feed,
       ],
+    }),
+
+  toggleSongHidden: (songId) =>
+    set({
+      songs: get().songs.map((s) => (s.id === songId ? { ...s, hidden: !s.hidden } : s)),
     }),
 }));
