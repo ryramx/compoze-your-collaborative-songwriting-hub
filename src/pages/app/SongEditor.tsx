@@ -224,6 +224,16 @@ export default function SongEditor() {
           <Button size="sm" variant="outline" onClick={handleShare} className="rounded-full border-border/60">
             <Share2 className="h-4 w-4" /> Compartilhar
           </Button>
+
+          <ConfirmDeleteDialog onConfirm={handleDelete} title={song.title}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" /> Excluir
+            </Button>
+          </ConfirmDeleteDialog>
         </div>
       </div>
 
