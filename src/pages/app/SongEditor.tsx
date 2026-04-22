@@ -435,14 +435,15 @@ export default function SongEditor() {
             >
               <Share2 className="h-5 w-5" /> Compartilhar
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="destructive"
-              size="lg"
-              className="h-12 w-full rounded-2xl text-base"
-            >
-              <Trash2 className="h-5 w-5" /> Excluir canção
-            </Button>
+            <ConfirmDeleteDialog onConfirm={handleDelete} title={song.title}>
+              <Button
+                variant="destructive"
+                size="lg"
+                className="h-12 w-full rounded-2xl text-base"
+              >
+                <Trash2 className="h-5 w-5" /> Excluir canção
+              </Button>
+            </ConfirmDeleteDialog>
           </div>
         </div>
       </div>
