@@ -76,6 +76,7 @@ export default function SongEditor() {
   const removeBlock = useCompoze((s) => s.removeBlock);
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
   const setContribution = useCompoze((s) => s.setContribution);
+  const deleteSong = useCompoze((s) => s.deleteSong);
 
   const otherCollaborators = useMemo(
     () => song?.collaborators.filter((c) => c.userId !== me.id).map((c) => c.userId) ?? [],
@@ -143,6 +144,8 @@ export default function SongEditor() {
     toast.success("Link da canção copiado ✨");
   };
   const handleDelete = () => {
+    if (!song) return;
+    deleteSong(song.id);
     toast.success("Canção movida para a Lixeira");
     navigate("/songs");
   };
