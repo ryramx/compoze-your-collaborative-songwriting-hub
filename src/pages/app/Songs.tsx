@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, List, Plus, Search } from "lucide-react";
+import { LayoutGrid, List, Plus, Search, Trash2 } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { SongCard } from "@/components/compoze/SongCard";
 import { SongPreviewModal } from "@/components/compoze/SongPreviewModal";
 import { StatusBadge } from "@/components/compoze/StatusBadge";
 import { CollaboratorStack } from "@/components/compoze/CollaboratorStack";
+import { ConfirmDeleteDialog } from "@/components/compoze/ConfirmDeleteDialog";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -35,6 +37,7 @@ type SortOpt = "recent" | "old" | "status";
 export default function Songs() {
   const songs = useCompoze((s) => s.songs);
   const createSong = useCompoze((s) => s.createSong);
+  const deleteSong = useCompoze((s) => s.deleteSong);
   const [openSong, setOpenSong] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | SongStatus>("all");
   const [query, setQuery] = useState("");
@@ -144,25 +147,45 @@ export default function Songs() {
       ) : view === "list" ? (
         <div className="overflow-hidden rounded-2xl border border-border/60 bg-gradient-card">
           {filtered.map((s, i) => (
-            <button
+            <div
               key={s.id}
-              onClick={() => setOpenSong(s.id)}
               className={cn(
-                "flex w-full items-center gap-4 px-4 py-3 text-left transition-colors hover:bg-muted/40",
+                "group flex w-full items-center gap-4 px-4 py-3 transition-colors hover:bg-muted/40",
                 i > 0 && "border-t border-border/60",
               )}
             >
-              <div className="min-w-0 flex-1">
-                <div className="truncate font-medium">{s.title}</div>
-                <div className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(new Date(s.updatedAt), { locale: ptBR, addSuffix: true })}
-                  {s.key && <span className="ml-2 font-mono">· {s.key}</span>}
-                  {s.bpm && <span className="ml-1 font-mono">· {s.bpm} BPM</span>}
+              <button
+                onClick={() => setOpenSong(s.id)}
+                className="flex min-w-0 flex-1 items-center gap-4 text-left"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-medium">{s.title}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {formatDistanceToNow(new Date(s.updatedAt), { locale: ptBR, addSuffix: true })}
+                    {s.key && <span className="ml-2 font-mono">· {s.key}</span>}
+                    {s.bpm && <span className="ml-1 font-mono">· {s.bpm} BPM</span>}
+                  </div>
                 </div>
-              </div>
-              <CollaboratorStack userIds={s.collaborators.map((c) => c.userId)} max={3} />
+                <CollaboratorStack userIds={s.collaborators.map((c) => c.userId)} max={3} />
+              </button>
               <StatusBadge status={s.status} />
-            </button>
+              <ConfirmDeleteDialog
+                title={s.title}
+                onConfirm={() => {
+                  deleteSong(s.id);
+                  toast.success("Canção movida para a Lixeira");
+                }}
+              >
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                  aria-label="Excluir canção"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </ConfirmDeleteDialog>
+            </div>
           ))}
         </div>
       ) : (

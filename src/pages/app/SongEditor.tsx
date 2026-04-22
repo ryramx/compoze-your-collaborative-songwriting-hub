@@ -40,6 +40,7 @@ import { StatusBadge } from "@/components/compoze/StatusBadge";
 import type { SongBlock, SongStatus } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/compoze/ConfirmDeleteDialog";
 
 const statusOptions: { value: SongStatus; label: string }[] = [
   { value: "ideia", label: "Ideia" },
@@ -76,6 +77,7 @@ export default function SongEditor() {
   const removeBlock = useCompoze((s) => s.removeBlock);
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
   const setContribution = useCompoze((s) => s.setContribution);
+  const deleteSong = useCompoze((s) => s.deleteSong);
 
   const otherCollaborators = useMemo(
     () => song?.collaborators.filter((c) => c.userId !== me.id).map((c) => c.userId) ?? [],
@@ -143,6 +145,8 @@ export default function SongEditor() {
     toast.success("Link da canção copiado ✨");
   };
   const handleDelete = () => {
+    if (!song) return;
+    deleteSong(song.id);
     toast.success("Canção movida para a Lixeira");
     navigate("/songs");
   };
@@ -221,6 +225,16 @@ export default function SongEditor() {
           <Button size="sm" variant="outline" onClick={handleShare} className="rounded-full border-border/60">
             <Share2 className="h-4 w-4" /> Compartilhar
           </Button>
+
+          <ConfirmDeleteDialog onConfirm={handleDelete} title={song.title}>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="rounded-full text-destructive hover:bg-destructive/10 hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" /> Excluir
+            </Button>
+          </ConfirmDeleteDialog>
         </div>
       </div>
 
@@ -422,14 +436,15 @@ export default function SongEditor() {
             >
               <Share2 className="h-5 w-5" /> Compartilhar
             </Button>
-            <Button
-              onClick={handleDelete}
-              variant="destructive"
-              size="lg"
-              className="h-12 w-full rounded-2xl text-base"
-            >
-              <Trash2 className="h-5 w-5" /> Excluir canção
-            </Button>
+            <ConfirmDeleteDialog onConfirm={handleDelete} title={song.title}>
+              <Button
+                variant="destructive"
+                size="lg"
+                className="h-12 w-full rounded-2xl text-base"
+              >
+                <Trash2 className="h-5 w-5" /> Excluir canção
+              </Button>
+            </ConfirmDeleteDialog>
           </div>
         </div>
       </div>

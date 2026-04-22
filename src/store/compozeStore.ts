@@ -44,6 +44,7 @@ interface CompozeState {
   sendMessage: (toUserId: string, content: string) => void;
   postFeed: (content: string) => void;
   toggleSongHidden: (songId: string) => void;
+  deleteSong: (songId: string) => void;
 }
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -218,5 +219,15 @@ export const useCompoze = create<CompozeState>((set, get) => ({
   toggleSongHidden: (songId) =>
     set({
       songs: get().songs.map((s) => (s.id === songId ? { ...s, hidden: !s.hidden } : s)),
+    }),
+
+  deleteSong: (songId) =>
+    set({
+      songs: get().songs.filter((s) => s.id !== songId),
+      projects: get().projects.map((p) =>
+        p.songIds.includes(songId)
+          ? { ...p, songIds: p.songIds.filter((sid) => sid !== songId) }
+          : p,
+      ),
     }),
 }));
