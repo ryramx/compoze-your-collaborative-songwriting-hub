@@ -40,6 +40,7 @@ import { StatusBadge } from "@/components/compoze/StatusBadge";
 import type { SongBlock, SongStatus } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { ConfirmDeleteDialog } from "@/components/compoze/ConfirmDeleteDialog";
 
 const statusOptions: { value: SongStatus; label: string }[] = [
   { value: "ideia", label: "Ideia" },
