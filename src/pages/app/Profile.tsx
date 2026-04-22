@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 export default function Profile() {
   const me = useCompoze((s) => s.users.find((u) => u.id === s.currentUserId)!);
   const allSongs = useCompoze((s) => s.songs);
-  const projects = useCompoze((s) => s.projects.filter((p) => p.collaboratorIds.includes(me.id)));
+  const allProjects = useCompoze((s) => s.projects);
   const followingIds = useCompoze((s) => s.followingIds);
   const toggleFollow = useCompoze((s) => s.toggleFollow);
   const toggleHidden = useCompoze((s) => s.toggleSongHidden);
@@ -31,6 +31,7 @@ export default function Profile() {
   const isFollowing = followingIds.includes(me.id);
   const isOwner = true; // viewing own profile
 
+  const projects = allProjects.filter((p) => p.collaboratorIds.includes(me.id));
   const mySongs = allSongs.filter(
     (x) => x.creatorId === me.id || x.collaborators.some((c) => c.userId === me.id),
   );
