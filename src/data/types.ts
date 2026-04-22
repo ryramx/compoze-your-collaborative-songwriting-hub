@@ -41,6 +41,9 @@ export interface Song {
   blocks: SongBlock[];
   key?: string;
   bpm?: number;
+  timeSignature?: string;
+  tags?: string[];
+  hidden?: boolean;
 }
 
 export interface Folder {
