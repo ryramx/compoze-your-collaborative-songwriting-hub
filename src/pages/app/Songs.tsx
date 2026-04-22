@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { LayoutGrid, List, Plus, Search } from "lucide-react";
+import { LayoutGrid, List, Plus, Search, Trash2 } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { SongCard } from "@/components/compoze/SongCard";
 import { SongPreviewModal } from "@/components/compoze/SongPreviewModal";
 import { StatusBadge } from "@/components/compoze/StatusBadge";
 import { CollaboratorStack } from "@/components/compoze/CollaboratorStack";
+import { ConfirmDeleteDialog } from "@/components/compoze/ConfirmDeleteDialog";
+import { toast } from "sonner";
 import {
   Select,
   SelectContent,
@@ -35,6 +37,7 @@ type SortOpt = "recent" | "old" | "status";
 export default function Songs() {
   const songs = useCompoze((s) => s.songs);
   const createSong = useCompoze((s) => s.createSong);
+  const deleteSong = useCompoze((s) => s.deleteSong);
   const [openSong, setOpenSong] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | SongStatus>("all");
   const [query, setQuery] = useState("");
