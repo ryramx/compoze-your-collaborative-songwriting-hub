@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Music4, Clock, Mic2 } from "lucide-react";
+import { Music4, Clock, Mic2, Trash2 } from "lucide-react";
 import type { Song } from "@/data/types";
 import { useCompoze } from "@/store/compozeStore";
 import { Card } from "@/components/ui/card";
@@ -7,9 +7,13 @@ import { StatusBadge } from "./StatusBadge";
 import { CollaboratorStack } from "./CollaboratorStack";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { Button } from "@/components/ui/button";
+import { ConfirmDeleteDialog } from "./ConfirmDeleteDialog";
+import { toast } from "sonner";
 
 export function SongCard({ song, onOpen }: { song: Song; onOpen?: (id: string) => void }) {
   const project = useCompoze((s) => (song.projectId ? s.getProject(song.projectId) : undefined));
+  const deleteSong = useCompoze((s) => s.deleteSong);
 
   return (
     <Card
@@ -20,7 +24,27 @@ export function SongCard({ song, onOpen }: { song: Song; onOpen?: (id: string) =
         <div className="grid h-11 w-11 place-items-center rounded-xl bg-primary/10 text-primary group-hover:bg-primary/15">
           <Music4 className="h-5 w-5" />
         </div>
-        <StatusBadge status={song.status} />
+        <div className="flex items-center gap-1">
+          <StatusBadge status={song.status} />
+          <div onClick={(e) => e.stopPropagation()}>
+            <ConfirmDeleteDialog
+              title={song.title}
+              onConfirm={() => {
+                deleteSong(song.id);
+                toast.success("Canção movida para a Lixeira");
+              }}
+            >
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-7 w-7 rounded-full text-muted-foreground opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+                aria-label="Excluir canção"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </ConfirmDeleteDialog>
+          </div>
+        </div>
       </div>
       <h3 className="mt-3 truncate font-display text-lg font-semibold">{song.title}</h3>
       {project && (
