@@ -739,6 +739,8 @@ function EditorBlock({
   cursors,
   getUser,
   onFocus,
+  onBlur,
+  isFocused,
   shouldFocus,
   onFocusHandled,
   onEnter,
@@ -753,6 +755,8 @@ function EditorBlock({
   cursors: FakeCursor[];
   getUser: (id: string) => any;
   onFocus?: () => void;
+  onBlur?: () => void;
+  isFocused?: boolean;
   shouldFocus?: boolean;
   onFocusHandled?: () => void;
   onEnter?: () => void;
