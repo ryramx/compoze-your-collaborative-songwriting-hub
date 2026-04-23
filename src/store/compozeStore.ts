@@ -140,6 +140,30 @@ export const useCompoze = create<CompozeState>((set, get) => ({
       ),
     }),
 
+  insertBlock: (songId, block, options) => {
+    const newId = uid();
+    set({
+      songs: get().songs.map((s) => {
+        if (s.id !== songId) return s;
+        const newBlock = { ...block, id: newId } as SongBlock;
+        let blocks = s.blocks;
+        if (options?.afterId) {
+          const idx = s.blocks.findIndex((b) => b.id === options.afterId);
+          if (idx === -1) blocks = [...s.blocks, newBlock];
+          else blocks = [...s.blocks.slice(0, idx + 1), newBlock, ...s.blocks.slice(idx + 1)];
+        } else if (options?.beforeId) {
+          const idx = s.blocks.findIndex((b) => b.id === options.beforeId);
+          if (idx === -1) blocks = [...s.blocks, newBlock];
+          else blocks = [...s.blocks.slice(0, idx), newBlock, ...s.blocks.slice(idx)];
+        } else {
+          blocks = [...s.blocks, newBlock];
+        }
+        return { ...s, updatedAt: new Date().toISOString(), blocks };
+      }),
+    });
+    return newId;
+  },
+
   removeBlock: (songId, blockId) =>
     set({
       songs: get().songs.map((s) =>
