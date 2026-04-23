@@ -577,7 +577,7 @@ export default function SongEditor() {
                   : undefined;
                 let options: { afterId?: string; beforeId?: string } | undefined;
                 if (focused) {
-                  if (type === "chord-line" && focused.type === "lyric-line") {
+                  if (type === "chord-line") {
                     options = { beforeId: focused.id };
                   } else {
                     options = { afterId: focused.id };
@@ -683,7 +683,7 @@ export default function SongEditor() {
                 : undefined;
               let options: { afterId?: string; beforeId?: string } | undefined;
               if (focused) {
-                if (type === "chord-line" && focused.type === "lyric-line") {
+                if (type === "chord-line") {
                   options = { beforeId: focused.id };
                 } else {
                   options = { afterId: focused.id };
