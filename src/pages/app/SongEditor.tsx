@@ -95,6 +95,118 @@ export default function SongEditor() {
   const blocksAreaRef = useRef<HTMLDivElement>(null);
   const blocksEndRef = useRef<HTMLDivElement>(null);
 
+  // ---------- Undo / Redo history ----------
+  // We snapshot the editable parts of the song (blocks + title + metadata fields)
+  // with a small debounce so each "edit burst" becomes a single history entry.
+  type Snapshot = {
+    title: string;
+    blocks: SongBlock[];
+    key?: string;
+    bpm?: number;
+    timeSignature?: string;
+    tags?: string[];
+  };
+  const historyRef = useRef<Snapshot[]>([]);
+  const futureRef = useRef<Snapshot[]>([]);
+  const isApplyingHistoryRef = useRef(false);
+  const lastSnapshotRef = useRef<string>("");
+  const [, forceHistoryRender] = useState(0);
+  const bumpHistoryUI = () => forceHistoryRender((n) => n + 1);
+
+  useEffect(() => {
+    if (!song) return;
+    if (isApplyingHistoryRef.current) {
+      isApplyingHistoryRef.current = false;
+      return;
+    }
+    const snap: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const serialized = JSON.stringify(snap);
+    if (serialized === lastSnapshotRef.current) return;
+    // debounce: collapse rapid changes into one entry
+    const t = setTimeout(() => {
+      historyRef.current.push(JSON.parse(lastSnapshotRef.current || serialized));
+      // Cap history size
+      if (historyRef.current.length > 100) historyRef.current.shift();
+      lastSnapshotRef.current = serialized;
+      futureRef.current = [];
+      bumpHistoryUI();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [song?.title, song?.blocks, song?.key, song?.bpm, song?.timeSignature, song?.tags]);
+
+  const applySnapshot = (snap: Snapshot) => {
+    if (!song) return;
+    isApplyingHistoryRef.current = true;
+    updateSong(song.id, {
+      title: snap.title,
+      blocks: snap.blocks,
+      key: snap.key,
+      bpm: snap.bpm,
+      timeSignature: snap.timeSignature,
+      tags: snap.tags,
+    });
+    lastSnapshotRef.current = JSON.stringify(snap);
+  };
+
+  const handleUndo = () => {
+    if (!song || historyRef.current.length === 0) return;
+    const current: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const prev = historyRef.current.pop()!;
+    futureRef.current.push(current);
+    applySnapshot(prev);
+    bumpHistoryUI();
+  };
+  const handleRedo = () => {
+    if (!song || futureRef.current.length === 0) return;
+    const current: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const next = futureRef.current.pop()!;
+    historyRef.current.push(current);
+    applySnapshot(next);
+    bumpHistoryUI();
+  };
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) handleRedo();
+        else handleUndo();
+      } else if (e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const canUndo = historyRef.current.length > 0;
+  const canRedo = futureRef.current.length > 0;
+
   // Show floating toolbar while user is scrolling within the writing area.
   // On mobile/tablet (<md) we keep it visible whenever the writing area is
   // on screen — even if the on-screen keyboard opens (which would otherwise
