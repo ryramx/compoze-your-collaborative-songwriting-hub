@@ -505,7 +505,73 @@ export default function SongEditor() {
           </div>
         </div>
       </div>
+
+      {/* Floating bottom toolbar — visible only while user is scrolling within the writing area */}
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 px-3 py-2 shadow-lg backdrop-blur-xl transition-all duration-200",
+          showFloatingToolbar
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-full opacity-0",
+        )}
+        aria-hidden={!showFloatingToolbar}
+      >
+        <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+          <BlockInsertButtons
+            onInsert={(type) => {
+              const newBlock = {
+                type,
+                label: type === "section" ? "Nova seção" : undefined,
+                text: "",
+                authorId: me.id,
+              };
+              const focused = focusedBlockId
+                ? song.blocks.find((b) => b.id === focusedBlockId)
+                : undefined;
+              let options: { afterId?: string; beforeId?: string } | undefined;
+              if (focused) {
+                if (type === "chord-line" && focused.type === "lyric-line") {
+                  options = { beforeId: focused.id };
+                } else {
+                  options = { afterId: focused.id };
+                }
+              }
+              const newId = insertBlock(song.id, newBlock, options);
+              setPendingFocusId(newId);
+              setFocusedBlockId(newId);
+            }}
+          />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function BlockInsertButtons({
+  onInsert,
+}: {
+  onInsert: (type: "section" | "chord-line" | "lyric-line" | "note") => void;
+}) {
+  const items = [
+    { type: "section" as const, label: "Seção", icon: Hash },
+    { type: "chord-line" as const, label: "Acordes", icon: Music2 },
+    { type: "lyric-line" as const, label: "Letra", icon: Type },
+    { type: "note" as const, label: "Nota", icon: StickyNote },
+  ];
+  return (
+    <>
+      {items.map((t) => (
+        <Button
+          key={t.type}
+          size="sm"
+          variant="outline"
+          className="rounded-full border-border/60 bg-background/40"
+          onClick={() => onInsert(t.type)}
+        >
+          <t.icon className="h-3.5 w-3.5" /> {t.label}
+        </Button>
+      ))}
+    </>
   );
 }
 
