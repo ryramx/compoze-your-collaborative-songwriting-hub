@@ -838,6 +838,7 @@ function EditorBlock({
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
+            onBlur={onBlur}
             onKeyDown={(e) => {
               // Enter inserts a new lyric line below for lyric/note (no Shift)
               if (
@@ -886,15 +887,19 @@ function EditorBlock({
             );
           })}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mt-2 h-6 w-6 opacity-0 group-hover:opacity-100"
-          onClick={onRemove}
-          title="Remover"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {isFocused && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-2 h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRemove}
+            title="Remover"
+            aria-label="Remover bloco"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
       {!isMine && (
         <div className="ml-2 -mt-1 text-[10px] text-muted-foreground md:ml-8">
