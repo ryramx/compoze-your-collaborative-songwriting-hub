@@ -30,7 +30,6 @@ export default function AppLayout() {
   const title =
     titles[location.pathname] || titles[baseKey] || "Compoze";
   const me = useCompoze((s) => s.users.find((u) => u.id === s.currentUserId));
-  const createSong = useCompoze((s) => s.createSong);
 
   return (
     <SidebarProvider defaultOpen>
@@ -53,10 +52,7 @@ export default function AppLayout() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => {
-                  const id = createSong({ title: "Nova canção" });
-                  navigate(`/songs/${id}/edit`);
-                }}
+                onClick={() => navigate("/songs")}
                 className="hidden sm:inline-flex rounded-full bg-gradient-hero text-primary-foreground shadow-glow hover:opacity-90"
               >
                 <Sparkles className="h-4 w-4" />
