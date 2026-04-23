@@ -491,6 +491,10 @@ function EditorBlock({
   onRemove,
   cursors,
   getUser,
+  onFocus,
+  shouldFocus,
+  onFocusHandled,
+  onEnter,
 }: {
   block: SongBlock;
   authorColor: number;
@@ -501,17 +505,37 @@ function EditorBlock({
   onRemove: () => void;
   cursors: FakeCursor[];
   getUser: (id: string) => any;
+  onFocus?: () => void;
+  shouldFocus?: boolean;
+  onFocusHandled?: () => void;
+  onEnter?: () => void;
 }) {
   const Icon = blockTypeIcon[block.type];
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (shouldFocus && inputRef.current) {
+      inputRef.current.focus();
+      onFocusHandled?.();
+    }
+  }, [shouldFocus, onFocusHandled]);
 
   if (block.type === "section") {
     return (
       <div className="group relative mt-6 flex items-center gap-3 first:mt-2">
         <Hash className="h-3 w-3 text-primary" />
         <Input
+          ref={inputRef}
           value={block.label ?? ""}
           onChange={(e) => onLabel(e.target.value)}
+          onFocus={onFocus}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onEnter?.();
+            }
+          }}
           placeholder="Nome da seção"
           className="h-7 max-w-xs border-0 bg-transparent px-1 text-xs uppercase tracking-[0.25em] text-primary focus-visible:ring-1"
         />
@@ -536,8 +560,16 @@ function EditorBlock({
         </div>
         <div className="relative flex-1">
           <Input
+            ref={inputRef}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
+            onFocus={onFocus}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && block.type === "lyric-line") {
+                e.preventDefault();
+                onEnter?.();
+              }
+            }}
             placeholder={
               block.type === "chord-line"
                 ? "Am   F   C   G"
