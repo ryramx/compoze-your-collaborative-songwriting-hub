@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Calendar, Disc3, Music4, Plus } from "lucide-react";
+import { Calendar, Disc3, Music4, Plus, Sparkles } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -13,18 +13,34 @@ export default function Projects() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
-      <div className="flex items-end justify-between">
+      <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-bold">Projetos</h1>
           <p className="text-sm text-muted-foreground">EPs, álbuns e singles que você está produzindo.</p>
         </div>
         <NewProjectDialog>
-          <Button className="rounded-full bg-gradient-hero text-primary-foreground shadow-glow">
+          <Button
+            type="button"
+            className="rounded-full bg-primary text-primary-foreground shadow-glow hover:bg-primary/90"
+          >
             <Plus className="h-4 w-4" /> Novo projeto
           </Button>
         </NewProjectDialog>
       </div>
 
+      {projects.length === 0 ? (
+        <NewProjectDialog>
+          <button className="grid w-full place-items-center rounded-2xl border border-dashed border-border/60 py-20 text-center transition-colors hover:border-primary/50 hover:bg-muted/20">
+            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-primary/10 text-primary">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <div className="mt-4 font-display text-lg font-semibold">Comece seu primeiro projeto</div>
+            <p className="mt-1 max-w-md text-sm text-muted-foreground">
+              Agrupe canções em singles, EPs ou álbuns para organizar lançamentos.
+            </p>
+          </button>
+        </NewProjectDialog>
+      ) : (
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
         {projects.map((p) => (
           <Link
@@ -72,6 +88,7 @@ export default function Projects() {
           </Link>
         ))}
       </div>
+      )}
     </div>
   );
 }
