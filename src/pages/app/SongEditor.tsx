@@ -73,7 +73,6 @@ export default function SongEditor() {
   const getUser = useCompoze((s) => s.getUser);
   const updateSong = useCompoze((s) => s.updateSong);
   const updateBlock = useCompoze((s) => s.updateBlock);
-  const addBlock = useCompoze((s) => s.addBlock);
   const insertBlock = useCompoze((s) => s.insertBlock);
   const removeBlock = useCompoze((s) => s.removeBlock);
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
