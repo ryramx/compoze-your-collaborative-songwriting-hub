@@ -350,6 +350,18 @@ export default function SongEditor() {
                 onRemove={() => removeBlock(song.id, b.id)}
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
+                onFocus={() => setFocusedBlockId(b.id)}
+                shouldFocus={pendingFocusId === b.id}
+                onFocusHandled={() => setPendingFocusId(null)}
+                onEnter={() => {
+                  const newId = insertBlock(
+                    song.id,
+                    { type: "lyric-line", text: "", authorId: me.id },
+                    { afterId: b.id },
+                  );
+                  setPendingFocusId(newId);
+                  setFocusedBlockId(newId);
+                }}
               />
             ))}
           </div>
@@ -369,14 +381,29 @@ export default function SongEditor() {
                 size="sm"
                 variant="outline"
                 className="rounded-full border-border/60 bg-background/40"
-                onClick={() =>
-                  addBlock(song.id, {
+                onClick={() => {
+                  const newBlock = {
                     type: t.type,
                     label: t.type === "section" ? "Nova seção" : undefined,
                     text: "",
                     authorId: me.id,
-                  })
-                }
+                  };
+                  const focused = focusedBlockId
+                    ? song.blocks.find((b) => b.id === focusedBlockId)
+                    : undefined;
+                  let options: { afterId?: string; beforeId?: string } | undefined;
+                  if (focused) {
+                    if (t.type === "chord-line" && focused.type === "lyric-line") {
+                      // chords above the current lyric line
+                      options = { beforeId: focused.id };
+                    } else {
+                      options = { afterId: focused.id };
+                    }
+                  }
+                  const newId = insertBlock(song.id, newBlock, options);
+                  setPendingFocusId(newId);
+                  setFocusedBlockId(newId);
+                }}
               >
                 <t.icon className="h-3.5 w-3.5" /> {t.label}
               </Button>
