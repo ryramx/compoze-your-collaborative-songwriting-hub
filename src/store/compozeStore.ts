@@ -45,6 +45,11 @@ interface CompozeState {
   updateSong: (id: string, patch: Partial<Song>) => void;
   updateBlock: (songId: string, blockId: string, patch: Partial<SongBlock>) => void;
   addBlock: (songId: string, block: Omit<SongBlock, "id">) => void;
+  insertBlock: (
+    songId: string,
+    block: Omit<SongBlock, "id">,
+    options?: { afterId?: string; beforeId?: string },
+  ) => string;
   removeBlock: (songId: string, blockId: string) => void;
   inviteCollaborator: (songId: string, userId: string, percentage?: number) => void;
   setContribution: (songId: string, userId: string, percentage: number) => void;
@@ -134,6 +139,30 @@ export const useCompoze = create<CompozeState>((set, get) => ({
           : s,
       ),
     }),
+
+  insertBlock: (songId, block, options) => {
+    const newId = uid();
+    set({
+      songs: get().songs.map((s) => {
+        if (s.id !== songId) return s;
+        const newBlock = { ...block, id: newId } as SongBlock;
+        let blocks = s.blocks;
+        if (options?.afterId) {
+          const idx = s.blocks.findIndex((b) => b.id === options.afterId);
+          if (idx === -1) blocks = [...s.blocks, newBlock];
+          else blocks = [...s.blocks.slice(0, idx + 1), newBlock, ...s.blocks.slice(idx + 1)];
+        } else if (options?.beforeId) {
+          const idx = s.blocks.findIndex((b) => b.id === options.beforeId);
+          if (idx === -1) blocks = [...s.blocks, newBlock];
+          else blocks = [...s.blocks.slice(0, idx), newBlock, ...s.blocks.slice(idx)];
+        } else {
+          blocks = [...s.blocks, newBlock];
+        }
+        return { ...s, updatedAt: new Date().toISOString(), blocks };
+      }),
+    });
+    return newId;
+  },
 
   removeBlock: (songId, blockId) =>
     set({

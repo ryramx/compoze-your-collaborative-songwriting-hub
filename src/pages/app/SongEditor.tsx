@@ -73,7 +73,7 @@ export default function SongEditor() {
   const getUser = useCompoze((s) => s.getUser);
   const updateSong = useCompoze((s) => s.updateSong);
   const updateBlock = useCompoze((s) => s.updateBlock);
-  const addBlock = useCompoze((s) => s.addBlock);
+  const insertBlock = useCompoze((s) => s.insertBlock);
   const removeBlock = useCompoze((s) => s.removeBlock);
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
   const setContribution = useCompoze((s) => s.setContribution);
@@ -86,6 +86,8 @@ export default function SongEditor() {
   const [cursors, setCursors] = useState<FakeCursor[]>([]);
   const [savingPulse, setSavingPulse] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!song || otherCollaborators.length === 0) {
@@ -347,6 +349,18 @@ export default function SongEditor() {
                 onRemove={() => removeBlock(song.id, b.id)}
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
+                onFocus={() => setFocusedBlockId(b.id)}
+                shouldFocus={pendingFocusId === b.id}
+                onFocusHandled={() => setPendingFocusId(null)}
+                onEnter={() => {
+                  const newId = insertBlock(
+                    song.id,
+                    { type: "lyric-line", text: "", authorId: me.id },
+                    { afterId: b.id },
+                  );
+                  setPendingFocusId(newId);
+                  setFocusedBlockId(newId);
+                }}
               />
             ))}
           </div>
@@ -366,14 +380,29 @@ export default function SongEditor() {
                 size="sm"
                 variant="outline"
                 className="rounded-full border-border/60 bg-background/40"
-                onClick={() =>
-                  addBlock(song.id, {
+                onClick={() => {
+                  const newBlock = {
                     type: t.type,
                     label: t.type === "section" ? "Nova seção" : undefined,
                     text: "",
                     authorId: me.id,
-                  })
-                }
+                  };
+                  const focused = focusedBlockId
+                    ? song.blocks.find((b) => b.id === focusedBlockId)
+                    : undefined;
+                  let options: { afterId?: string; beforeId?: string } | undefined;
+                  if (focused) {
+                    if (t.type === "chord-line" && focused.type === "lyric-line") {
+                      // chords above the current lyric line
+                      options = { beforeId: focused.id };
+                    } else {
+                      options = { afterId: focused.id };
+                    }
+                  }
+                  const newId = insertBlock(song.id, newBlock, options);
+                  setPendingFocusId(newId);
+                  setFocusedBlockId(newId);
+                }}
               >
                 <t.icon className="h-3.5 w-3.5" /> {t.label}
               </Button>
@@ -462,6 +491,10 @@ function EditorBlock({
   onRemove,
   cursors,
   getUser,
+  onFocus,
+  shouldFocus,
+  onFocusHandled,
+  onEnter,
 }: {
   block: SongBlock;
   authorColor: number;
@@ -472,17 +505,37 @@ function EditorBlock({
   onRemove: () => void;
   cursors: FakeCursor[];
   getUser: (id: string) => any;
+  onFocus?: () => void;
+  shouldFocus?: boolean;
+  onFocusHandled?: () => void;
+  onEnter?: () => void;
 }) {
   const Icon = blockTypeIcon[block.type];
   const ref = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (shouldFocus && inputRef.current) {
+      inputRef.current.focus();
+      onFocusHandled?.();
+    }
+  }, [shouldFocus, onFocusHandled]);
 
   if (block.type === "section") {
     return (
       <div className="group relative mt-6 flex items-center gap-3 first:mt-2">
         <Hash className="h-3 w-3 text-primary" />
         <Input
+          ref={inputRef}
           value={block.label ?? ""}
           onChange={(e) => onLabel(e.target.value)}
+          onFocus={onFocus}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              onEnter?.();
+            }
+          }}
           placeholder="Nome da seção"
           className="h-7 max-w-xs border-0 bg-transparent px-1 text-xs uppercase tracking-[0.25em] text-primary focus-visible:ring-1"
         />
@@ -507,8 +560,16 @@ function EditorBlock({
         </div>
         <div className="relative flex-1">
           <Input
+            ref={inputRef}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
+            onFocus={onFocus}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && block.type === "lyric-line") {
+                e.preventDefault();
+                onEnter?.();
+              }
+            }}
             placeholder={
               block.type === "chord-line"
                 ? "Am   F   C   G"
