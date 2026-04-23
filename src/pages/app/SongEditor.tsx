@@ -374,7 +374,7 @@ export default function SongEditor() {
             </div>
           </Card>
 
-          <div className="space-y-2">
+          <div ref={blocksAreaRef} className="space-y-2">
             {song.blocks.map((b) => (
               <EditorBlock
                 key={b.id}
@@ -401,50 +401,40 @@ export default function SongEditor() {
                 }}
               />
             ))}
+            <div ref={blocksEndRef} aria-hidden className="h-px w-full" />
           </div>
 
-          {/* Add block toolbar */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {(
-              [
-                { type: "section", label: "Seção", icon: Hash },
-                { type: "chord-line", label: "Acordes", icon: Music2 },
-                { type: "lyric-line", label: "Letra", icon: Type },
-                { type: "note", label: "Nota", icon: StickyNote },
-              ] as const
-            ).map((t) => (
-              <Button
-                key={t.type}
-                size="sm"
-                variant="outline"
-                className="rounded-full border-border/60 bg-background/40"
-                onClick={() => {
-                  const newBlock = {
-                    type: t.type,
-                    label: t.type === "section" ? "Nova seção" : undefined,
-                    text: "",
-                    authorId: me.id,
-                  };
-                  const focused = focusedBlockId
-                    ? song.blocks.find((b) => b.id === focusedBlockId)
-                    : undefined;
-                  let options: { afterId?: string; beforeId?: string } | undefined;
-                  if (focused) {
-                    if (t.type === "chord-line" && focused.type === "lyric-line") {
-                      // chords above the current lyric line
-                      options = { beforeId: focused.id };
-                    } else {
-                      options = { afterId: focused.id };
-                    }
+          {/* Inline add-block toolbar (hidden while floating bar is shown) */}
+          <div
+            className={cn(
+              "mt-6 flex flex-wrap gap-2 transition-opacity",
+              showFloatingToolbar && "pointer-events-none opacity-0",
+            )}
+          >
+            <BlockInsertButtons
+              onInsert={(type) => {
+                const newBlock = {
+                  type,
+                  label: type === "section" ? "Nova seção" : undefined,
+                  text: "",
+                  authorId: me.id,
+                };
+                const focused = focusedBlockId
+                  ? song.blocks.find((b) => b.id === focusedBlockId)
+                  : undefined;
+                let options: { afterId?: string; beforeId?: string } | undefined;
+                if (focused) {
+                  if (type === "chord-line" && focused.type === "lyric-line") {
+                    options = { beforeId: focused.id };
+                  } else {
+                    options = { afterId: focused.id };
                   }
-                  const newId = insertBlock(song.id, newBlock, options);
-                  setPendingFocusId(newId);
-                  setFocusedBlockId(newId);
-                }}
-              >
-                <t.icon className="h-3.5 w-3.5" /> {t.label}
-              </Button>
-            ))}
+                }
+                const newId = insertBlock(song.id, newBlock, options);
+                setPendingFocusId(newId);
+                setFocusedBlockId(newId);
+              }}
+            />
           </div>
 
           {/* Authorship summary */}
