@@ -94,8 +94,11 @@ export default function SongEditor() {
   const blocksEndRef = useRef<HTMLDivElement>(null);
 
   // Show floating toolbar while user is scrolling within the writing area.
-  // Hide it once the end of the writing area is visible (so inline toolbar
- // takes over and the rest of the page can be reached).
+  // On mobile/tablet (<md) we keep it visible whenever the writing area is
+  // on screen — even if the on-screen keyboard opens (which would otherwise
+  // make the end-sentinel "appear" visible and hide the bar). On desktop
+  // we still hide it once the end of the writing area is reached so the
+  // inline toolbar takes over and the rest of the page is reachable.
   useEffect(() => {
     const area = blocksAreaRef.current;
     const end = blocksEndRef.current;
@@ -103,7 +106,10 @@ export default function SongEditor() {
 
     let areaVisible = false;
     let endVisible = false;
-    const update = () => setShowFloatingToolbar(areaVisible && !endVisible);
+    const isDesktop = () =>
+      typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
+    const update = () =>
+      setShowFloatingToolbar(areaVisible && (!isDesktop() || !endVisible));
 
     const areaObs = new IntersectionObserver(
       ([entry]) => {
@@ -121,9 +127,12 @@ export default function SongEditor() {
     );
     areaObs.observe(area);
     endObs.observe(end);
+    const onResize = () => update();
+    window.addEventListener("resize", onResize);
     return () => {
       areaObs.disconnect();
       endObs.disconnect();
+      window.removeEventListener("resize", onResize);
     };
   }, [song?.id]);
 
