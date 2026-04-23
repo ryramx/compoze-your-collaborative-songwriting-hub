@@ -581,6 +581,7 @@ function EditorBlock({
               "h-10 border-0 bg-transparent px-2 text-base focus-visible:ring-1",
               block.type === "chord-line" && "chord text-primary font-semibold",
               block.type === "note" && "italic text-muted-foreground",
+              block.type === "lyric-line" && "pl-8",
               `author-${authorColor}`,
               "rounded-md",
             )}
