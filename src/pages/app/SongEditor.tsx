@@ -328,6 +328,32 @@ export default function SongEditor() {
           className="h-9 max-w-[12rem] flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:max-w-xs md:text-lg"
         />
 
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            title="Desfazer (Ctrl/Cmd+Z)"
+            aria-label="Desfazer"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            title="Refazer (Ctrl/Cmd+Shift+Z)"
+            aria-label="Refazer"
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+        </div>
+
         {/* Saving indicator */}
         <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
           <span className={cn("relative flex h-1.5 w-1.5", savingPulse && "animate-pulse")}>
