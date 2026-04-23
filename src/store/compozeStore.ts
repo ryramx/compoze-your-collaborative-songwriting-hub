@@ -239,4 +239,27 @@ export const useCompoze = create<CompozeState>((set, get) => ({
           : p,
       ),
     }),
+
+  createProject: ({ name, type, style, description, releaseDate, fundingGoal, estimatedCost }) => {
+    const id = "p_" + uid();
+    const project: Project = {
+      id,
+      name: name || "Novo projeto",
+      type,
+      style,
+      description: description ?? "",
+      cover:
+        "https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=800&q=70",
+      releaseDate: releaseDate || new Date(Date.now() + 1000 * 60 * 60 * 24 * 90).toISOString(),
+      estimatedCost: estimatedCost ?? 0,
+      fundingGoal: fundingGoal ?? 0,
+      fundingProgress: 0,
+      status: "planejamento",
+      songIds: [],
+      collaboratorIds: [get().currentUserId],
+      ownerId: get().currentUserId,
+    };
+    set({ projects: [project, ...get().projects] });
+    return id;
+  },
 }));
