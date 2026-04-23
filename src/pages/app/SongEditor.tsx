@@ -523,7 +523,7 @@ export default function SongEditor() {
             </div>
           </Card>
 
-          <div ref={blocksAreaRef} className="space-y-2">
+          <div ref={blocksAreaRef} className="space-y-0.5">
             {song.blocks.map((b) => (
               <EditorBlock
                 key={b.id}
