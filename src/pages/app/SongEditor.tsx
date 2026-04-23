@@ -607,13 +607,25 @@ function EditorBlock({
   const Icon = blockTypeIcon[block.type];
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (shouldFocus && inputRef.current) {
-      inputRef.current.focus();
-      onFocusHandled?.();
+    if (shouldFocus) {
+      const el = textareaRef.current ?? inputRef.current;
+      if (el) {
+        el.focus();
+        onFocusHandled?.();
+      }
     }
   }, [shouldFocus, onFocusHandled]);
+
+  // Auto-resize textarea to fit content (handles wrapping for long lines)
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [block.text]);
 
   if (block.type === "section") {
     return (
@@ -653,17 +665,23 @@ function EditorBlock({
           <Icon className="h-3 w-3" />
         </div>
         <div className="relative flex-1">
-          <Input
-            ref={inputRef}
+          <Textarea
+            ref={textareaRef}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && block.type === "lyric-line") {
+              // Enter inserts a new lyric line below for lyric/note (no Shift)
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (block.type === "lyric-line" || block.type === "note")
+              ) {
                 e.preventDefault();
                 onEnter?.();
               }
             }}
+            rows={1}
             placeholder={
               block.type === "chord-line"
                 ? "Am   F   C   G"
@@ -672,7 +690,7 @@ function EditorBlock({
                 : "Letra…"
             }
             className={cn(
-              "h-10 border-0 bg-transparent px-2 text-base focus-visible:ring-1",
+              "min-h-[2.5rem] resize-none overflow-hidden whitespace-pre-wrap break-words border-0 bg-transparent px-2 py-2 text-base leading-relaxed focus-visible:ring-1 focus-visible:ring-offset-0",
               block.type === "chord-line" && "chord text-primary font-semibold",
               block.type === "note" && "italic text-muted-foreground",
               block.type === "lyric-line" && "pl-8",
