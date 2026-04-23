@@ -31,6 +31,7 @@ export default function AppLayout() {
   const title =
     titles[location.pathname] || titles[baseKey] || "Compoze";
   const me = useCompoze((s) => s.users.find((u) => u.id === s.currentUserId));
+  const createSong = useCompoze((s) => s.createSong);
   const canGoBack = location.pathname !== "/";
 
   return (
@@ -63,7 +64,10 @@ export default function AppLayout() {
               <NotificationsPopover />
               <Button
                 size="sm"
-                onClick={() => navigate("/songs")}
+                onClick={() => {
+                  const id = createSong({ title: "Nova canção" });
+                  navigate(`/songs/${id}/edit`);
+                }}
                 className="hidden sm:inline-flex rounded-full bg-gradient-hero text-primary-foreground shadow-glow hover:opacity-90"
               >
                 <Sparkles className="h-4 w-4" />

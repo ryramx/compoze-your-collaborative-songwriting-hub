@@ -56,22 +56,18 @@ export default function Dashboard() {
             </h1>
             <div className="mt-6 flex flex-wrap gap-2">
               <Button
-                onClick={() => {
-                  const id = createSong({ title: "Nova canção" });
-                  navigate(`/songs/${id}/edit`);
-                }}
+                onClick={() => navigate("/songs")}
                 className="rounded-full bg-primary text-primary-foreground shadow-glow hover:bg-primary/90"
               >
-                <Plus className="h-4 w-4" /> Nova canção
+                <Music4 className="h-4 w-4" /> Ver canções
               </Button>
-              <NewProjectDialog>
-                <Button
-                  variant="outline"
-                  className="rounded-full border-border/60 bg-background/40 backdrop-blur-md"
-                >
-                  <Disc3 className="h-4 w-4" /> Novo projeto
-                </Button>
-              </NewProjectDialog>
+              <Button
+                variant="outline"
+                onClick={() => navigate("/projects")}
+                className="rounded-full border-border/60 bg-background/40 backdrop-blur-md"
+              >
+                <Disc3 className="h-4 w-4" /> Ver projetos
+              </Button>
             </div>
           </div>
         </div>
