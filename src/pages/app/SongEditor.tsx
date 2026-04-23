@@ -89,6 +89,43 @@ export default function SongEditor() {
   const [tagInput, setTagInput] = useState("");
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const blocksAreaRef = useRef<HTMLDivElement>(null);
+  const blocksEndRef = useRef<HTMLDivElement>(null);
+
+  // Show floating toolbar while user is scrolling within the writing area.
+  // Hide it once the end of the writing area is visible (so inline toolbar
+ // takes over and the rest of the page can be reached).
+  useEffect(() => {
+    const area = blocksAreaRef.current;
+    const end = blocksEndRef.current;
+    if (!area || !end) return;
+
+    let areaVisible = false;
+    let endVisible = false;
+    const update = () => setShowFloatingToolbar(areaVisible && !endVisible);
+
+    const areaObs = new IntersectionObserver(
+      ([entry]) => {
+        areaVisible = entry.isIntersecting;
+        update();
+      },
+      { threshold: 0 },
+    );
+    const endObs = new IntersectionObserver(
+      ([entry]) => {
+        endVisible = entry.isIntersecting;
+        update();
+      },
+      { threshold: 0 },
+    );
+    areaObs.observe(area);
+    endObs.observe(end);
+    return () => {
+      areaObs.disconnect();
+      endObs.disconnect();
+    };
+  }, [song?.id]);
 
   useEffect(() => {
     if (!song || otherCollaborators.length === 0) {
