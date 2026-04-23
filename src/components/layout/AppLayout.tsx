@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Bell, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { useCompoze } from "@/store/compozeStore";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
 import { Link } from "react-router-dom";
 import { GlobalSearch } from "@/components/compoze/GlobalSearch";
+import { NotificationsPopover } from "@/components/compoze/NotificationsPopover";
 
 const titles: Record<string, string> = {
   "/": "Dashboard",
@@ -47,9 +48,7 @@ export default function AppLayout() {
             <div className="ml-auto flex items-center gap-2">
               <GlobalSearch className="hidden md:block" />
               <ThemeToggle />
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Bell className="h-4 w-4" />
-              </Button>
+              <NotificationsPopover />
               <Button
                 size="sm"
                 onClick={() => navigate("/songs")}
