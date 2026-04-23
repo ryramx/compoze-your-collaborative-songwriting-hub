@@ -14,6 +14,8 @@ import {
   Tag,
   X,
   Check,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
