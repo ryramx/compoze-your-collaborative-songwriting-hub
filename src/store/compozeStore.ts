@@ -45,6 +45,11 @@ interface CompozeState {
   updateSong: (id: string, patch: Partial<Song>) => void;
   updateBlock: (songId: string, blockId: string, patch: Partial<SongBlock>) => void;
   addBlock: (songId: string, block: Omit<SongBlock, "id">) => void;
+  insertBlock: (
+    songId: string,
+    block: Omit<SongBlock, "id">,
+    options?: { afterId?: string; beforeId?: string },
+  ) => string;
   removeBlock: (songId: string, blockId: string) => void;
   inviteCollaborator: (songId: string, userId: string, percentage?: number) => void;
   setContribution: (songId: string, userId: string, percentage: number) => void;
