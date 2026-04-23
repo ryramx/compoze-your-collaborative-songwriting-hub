@@ -18,6 +18,7 @@ import {
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import {
   Select,
@@ -88,6 +89,43 @@ export default function SongEditor() {
   const [tagInput, setTagInput] = useState("");
   const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
   const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
+  const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
+  const blocksAreaRef = useRef<HTMLDivElement>(null);
+  const blocksEndRef = useRef<HTMLDivElement>(null);
+
+  // Show floating toolbar while user is scrolling within the writing area.
+  // Hide it once the end of the writing area is visible (so inline toolbar
+ // takes over and the rest of the page can be reached).
+  useEffect(() => {
+    const area = blocksAreaRef.current;
+    const end = blocksEndRef.current;
+    if (!area || !end) return;
+
+    let areaVisible = false;
+    let endVisible = false;
+    const update = () => setShowFloatingToolbar(areaVisible && !endVisible);
+
+    const areaObs = new IntersectionObserver(
+      ([entry]) => {
+        areaVisible = entry.isIntersecting;
+        update();
+      },
+      { threshold: 0 },
+    );
+    const endObs = new IntersectionObserver(
+      ([entry]) => {
+        endVisible = entry.isIntersecting;
+        update();
+      },
+      { threshold: 0 },
+    );
+    areaObs.observe(area);
+    endObs.observe(end);
+    return () => {
+      areaObs.disconnect();
+      endObs.disconnect();
+    };
+  }, [song?.id]);
 
   useEffect(() => {
     if (!song || otherCollaborators.length === 0) {
@@ -336,7 +374,7 @@ export default function SongEditor() {
             </div>
           </Card>
 
-          <div className="space-y-2">
+          <div ref={blocksAreaRef} className="space-y-2">
             {song.blocks.map((b) => (
               <EditorBlock
                 key={b.id}
@@ -363,50 +401,40 @@ export default function SongEditor() {
                 }}
               />
             ))}
+            <div ref={blocksEndRef} aria-hidden className="h-px w-full" />
           </div>
 
-          {/* Add block toolbar */}
-          <div className="mt-6 flex flex-wrap gap-2">
-            {(
-              [
-                { type: "section", label: "Seção", icon: Hash },
-                { type: "chord-line", label: "Acordes", icon: Music2 },
-                { type: "lyric-line", label: "Letra", icon: Type },
-                { type: "note", label: "Nota", icon: StickyNote },
-              ] as const
-            ).map((t) => (
-              <Button
-                key={t.type}
-                size="sm"
-                variant="outline"
-                className="rounded-full border-border/60 bg-background/40"
-                onClick={() => {
-                  const newBlock = {
-                    type: t.type,
-                    label: t.type === "section" ? "Nova seção" : undefined,
-                    text: "",
-                    authorId: me.id,
-                  };
-                  const focused = focusedBlockId
-                    ? song.blocks.find((b) => b.id === focusedBlockId)
-                    : undefined;
-                  let options: { afterId?: string; beforeId?: string } | undefined;
-                  if (focused) {
-                    if (t.type === "chord-line" && focused.type === "lyric-line") {
-                      // chords above the current lyric line
-                      options = { beforeId: focused.id };
-                    } else {
-                      options = { afterId: focused.id };
-                    }
+          {/* Inline add-block toolbar (hidden while floating bar is shown) */}
+          <div
+            className={cn(
+              "mt-6 flex flex-wrap gap-2 transition-opacity",
+              showFloatingToolbar && "pointer-events-none opacity-0",
+            )}
+          >
+            <BlockInsertButtons
+              onInsert={(type) => {
+                const newBlock = {
+                  type,
+                  label: type === "section" ? "Nova seção" : undefined,
+                  text: "",
+                  authorId: me.id,
+                };
+                const focused = focusedBlockId
+                  ? song.blocks.find((b) => b.id === focusedBlockId)
+                  : undefined;
+                let options: { afterId?: string; beforeId?: string } | undefined;
+                if (focused) {
+                  if (type === "chord-line" && focused.type === "lyric-line") {
+                    options = { beforeId: focused.id };
+                  } else {
+                    options = { afterId: focused.id };
                   }
-                  const newId = insertBlock(song.id, newBlock, options);
-                  setPendingFocusId(newId);
-                  setFocusedBlockId(newId);
-                }}
-              >
-                <t.icon className="h-3.5 w-3.5" /> {t.label}
-              </Button>
-            ))}
+                }
+                const newId = insertBlock(song.id, newBlock, options);
+                setPendingFocusId(newId);
+                setFocusedBlockId(newId);
+              }}
+            />
           </div>
 
           {/* Authorship summary */}
@@ -477,7 +505,73 @@ export default function SongEditor() {
           </div>
         </div>
       </div>
+
+      {/* Floating bottom toolbar — visible only while user is scrolling within the writing area */}
+      <div
+        className={cn(
+          "fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-background/90 px-3 py-2 shadow-lg backdrop-blur-xl transition-all duration-200",
+          showFloatingToolbar
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none translate-y-full opacity-0",
+        )}
+        aria-hidden={!showFloatingToolbar}
+      >
+        <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
+          <BlockInsertButtons
+            onInsert={(type) => {
+              const newBlock = {
+                type,
+                label: type === "section" ? "Nova seção" : undefined,
+                text: "",
+                authorId: me.id,
+              };
+              const focused = focusedBlockId
+                ? song.blocks.find((b) => b.id === focusedBlockId)
+                : undefined;
+              let options: { afterId?: string; beforeId?: string } | undefined;
+              if (focused) {
+                if (type === "chord-line" && focused.type === "lyric-line") {
+                  options = { beforeId: focused.id };
+                } else {
+                  options = { afterId: focused.id };
+                }
+              }
+              const newId = insertBlock(song.id, newBlock, options);
+              setPendingFocusId(newId);
+              setFocusedBlockId(newId);
+            }}
+          />
+        </div>
+      </div>
     </div>
+  );
+}
+
+function BlockInsertButtons({
+  onInsert,
+}: {
+  onInsert: (type: "section" | "chord-line" | "lyric-line" | "note") => void;
+}) {
+  const items = [
+    { type: "section" as const, label: "Seção", icon: Hash },
+    { type: "chord-line" as const, label: "Acordes", icon: Music2 },
+    { type: "lyric-line" as const, label: "Letra", icon: Type },
+    { type: "note" as const, label: "Nota", icon: StickyNote },
+  ];
+  return (
+    <>
+      {items.map((t) => (
+        <Button
+          key={t.type}
+          size="sm"
+          variant="outline"
+          className="rounded-full border-border/60 bg-background/40"
+          onClick={() => onInsert(t.type)}
+        >
+          <t.icon className="h-3.5 w-3.5" /> {t.label}
+        </Button>
+      ))}
+    </>
   );
 }
 
@@ -513,13 +607,25 @@ function EditorBlock({
   const Icon = blockTypeIcon[block.type];
   const ref = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (shouldFocus && inputRef.current) {
-      inputRef.current.focus();
-      onFocusHandled?.();
+    if (shouldFocus) {
+      const el = textareaRef.current ?? inputRef.current;
+      if (el) {
+        el.focus();
+        onFocusHandled?.();
+      }
     }
   }, [shouldFocus, onFocusHandled]);
+
+  // Auto-resize textarea to fit content (handles wrapping for long lines)
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [block.text]);
 
   if (block.type === "section") {
     return (
@@ -559,17 +665,23 @@ function EditorBlock({
           <Icon className="h-3 w-3" />
         </div>
         <div className="relative flex-1">
-          <Input
-            ref={inputRef}
+          <Textarea
+            ref={textareaRef}
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && block.type === "lyric-line") {
+              // Enter inserts a new lyric line below for lyric/note (no Shift)
+              if (
+                e.key === "Enter" &&
+                !e.shiftKey &&
+                (block.type === "lyric-line" || block.type === "note")
+              ) {
                 e.preventDefault();
                 onEnter?.();
               }
             }}
+            rows={1}
             placeholder={
               block.type === "chord-line"
                 ? "Am   F   C   G"
@@ -578,7 +690,7 @@ function EditorBlock({
                 : "Letra…"
             }
             className={cn(
-              "h-10 border-0 bg-transparent px-2 text-base focus-visible:ring-1",
+              "min-h-[2.5rem] resize-none overflow-hidden whitespace-pre-wrap break-words border-0 bg-transparent px-2 py-2 text-base leading-relaxed focus-visible:ring-1 focus-visible:ring-offset-0",
               block.type === "chord-line" && "chord text-primary font-semibold",
               block.type === "note" && "italic text-muted-foreground",
               block.type === "lyric-line" && "pl-8",
