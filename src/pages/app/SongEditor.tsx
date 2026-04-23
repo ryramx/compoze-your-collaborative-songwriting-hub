@@ -786,7 +786,7 @@ function EditorBlock({
 
   if (block.type === "section") {
     return (
-      <div className="group relative mt-6 flex items-center gap-3 first:mt-2">
+      <div className="group relative mt-3 flex items-center gap-3 first:mt-1">
         <Hash className="h-3 w-3 text-primary" />
         <Input
           ref={inputRef}
