@@ -44,7 +44,7 @@ export function SongLine({ block, showAuthor = true }: Props) {
   }
 
   return (
-    <div className={cn("rounded-md px-1 leading-relaxed", showAuthor && colorClass)}>
+    <div className={cn("rounded-md px-1 pl-8 leading-relaxed", showAuthor && colorClass)}>
       {block.text}
     </div>
   );
