@@ -54,10 +54,6 @@ export default function Dashboard() {
             <h1 className="font-display text-3xl md:text-5xl lg:text-6xl font-bold leading-[1.05]">
               O que vamos <span className="gradient-text">escrever hoje?</span>
             </h1>
-            <p className="mt-4 max-w-xl text-sm md:text-base text-muted-foreground">
-              {songs.filter((s) => s.status === "escrita" || s.status === "revisao").length} canções em andamento ·{" "}
-              {projects.length} projetos vivos. Pegue sua próxima ideia onde parou.
-            </p>
             <div className="mt-6 flex flex-wrap gap-2">
               <Button
                 onClick={() => {
