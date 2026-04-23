@@ -33,6 +33,15 @@ interface CompozeState {
   getSong: (id: string) => Song | undefined;
   getProject: (id: string) => Project | undefined;
   createSong: (input: { title: string; folderId?: string; projectId?: string }) => string;
+  createProject: (input: {
+    name: string;
+    type: Project["type"];
+    style: Project["style"];
+    description?: string;
+    releaseDate?: string;
+    fundingGoal?: number;
+    estimatedCost?: number;
+  }) => string;
   updateSong: (id: string, patch: Partial<Song>) => void;
   updateBlock: (songId: string, blockId: string, patch: Partial<SongBlock>) => void;
   addBlock: (songId: string, block: Omit<SongBlock, "id">) => void;
