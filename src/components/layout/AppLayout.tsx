@@ -1,8 +1,7 @@
-import { Outlet, useLocation } from "react-router-dom";
-import { Bell, Search, Sparkles } from "lucide-react";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Bell, Sparkles } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { ThemeToggle } from "@/components/compoze/ThemeToggle";
@@ -10,6 +9,7 @@ import { MobileNav } from "./MobileNav";
 import { useCompoze } from "@/store/compozeStore";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
 import { Link } from "react-router-dom";
+import { GlobalSearch } from "@/components/compoze/GlobalSearch";
 
 const titles: Record<string, string> = {
   "/": "Dashboard",
@@ -25,10 +25,12 @@ const titles: Record<string, string> = {
 
 export default function AppLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
   const baseKey = "/" + (location.pathname.split("/")[1] || "");
   const title =
     titles[location.pathname] || titles[baseKey] || "Compoze";
   const me = useCompoze((s) => s.users.find((u) => u.id === s.currentUserId));
+  const createSong = useCompoze((s) => s.createSong);
 
   return (
     <SidebarProvider defaultOpen>
@@ -44,19 +46,17 @@ export default function AppLayout() {
               <h1 className="font-display text-lg font-semibold leading-tight">{title}</h1>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <div className="relative hidden md:block">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar canções, projetos, compositores…"
-                  className="h-9 w-72 rounded-full bg-muted/50 pl-9"
-                />
-              </div>
+              <GlobalSearch className="hidden md:block" />
               <ThemeToggle />
               <Button variant="ghost" size="icon" className="rounded-full">
                 <Bell className="h-4 w-4" />
               </Button>
               <Button
                 size="sm"
+                onClick={() => {
+                  const id = createSong({ title: "Nova canção" });
+                  navigate(`/songs/${id}/edit`);
+                }}
                 className="hidden sm:inline-flex rounded-full bg-gradient-hero text-primary-foreground shadow-glow hover:opacity-90"
               >
                 <Sparkles className="h-4 w-4" />

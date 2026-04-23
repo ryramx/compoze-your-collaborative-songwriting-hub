@@ -10,6 +10,7 @@ import { SongPreviewModal } from "@/components/compoze/SongPreviewModal";
 import { CollaboratorStack } from "@/components/compoze/CollaboratorStack";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
 import { StatusBadge } from "@/components/compoze/StatusBadge";
+import { NewProjectDialog } from "@/components/compoze/NewProjectDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -67,11 +68,14 @@ export default function Dashboard() {
               >
                 <Plus className="h-4 w-4" /> Nova canção
               </Button>
-              <Button asChild variant="outline" className="rounded-full border-border/60 bg-background/40 backdrop-blur-md">
-                <Link to="/projects">
+              <NewProjectDialog>
+                <Button
+                  variant="outline"
+                  className="rounded-full border-border/60 bg-background/40 backdrop-blur-md"
+                >
                   <Disc3 className="h-4 w-4" /> Novo projeto
-                </Link>
-              </Button>
+                </Button>
+              </NewProjectDialog>
             </div>
           </div>
         </div>
