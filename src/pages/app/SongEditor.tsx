@@ -537,6 +537,10 @@ export default function SongEditor() {
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
                 onFocus={() => setFocusedBlockId(b.id)}
+                onBlur={() =>
+                  setFocusedBlockId((cur) => (cur === b.id ? null : cur))
+                }
+                isFocused={focusedBlockId === b.id}
                 shouldFocus={pendingFocusId === b.id}
                 onFocusHandled={() => setPendingFocusId(null)}
                 onEnter={() => {
