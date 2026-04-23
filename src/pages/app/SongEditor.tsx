@@ -74,6 +74,7 @@ export default function SongEditor() {
   const updateSong = useCompoze((s) => s.updateSong);
   const updateBlock = useCompoze((s) => s.updateBlock);
   const addBlock = useCompoze((s) => s.addBlock);
+  const insertBlock = useCompoze((s) => s.insertBlock);
   const removeBlock = useCompoze((s) => s.removeBlock);
   const inviteCollaborator = useCompoze((s) => s.inviteCollaborator);
   const setContribution = useCompoze((s) => s.setContribution);
@@ -86,6 +87,8 @@ export default function SongEditor() {
   const [cursors, setCursors] = useState<FakeCursor[]>([]);
   const [savingPulse, setSavingPulse] = useState(false);
   const [tagInput, setTagInput] = useState("");
+  const [focusedBlockId, setFocusedBlockId] = useState<string | null>(null);
+  const [pendingFocusId, setPendingFocusId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!song || otherCollaborators.length === 0) {
