@@ -793,6 +793,7 @@ function EditorBlock({
           value={block.label ?? ""}
           onChange={(e) => onLabel(e.target.value)}
           onFocus={onFocus}
+          onBlur={onBlur}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -803,9 +804,19 @@ function EditorBlock({
           className="h-7 max-w-xs border-0 bg-transparent px-1 text-xs uppercase tracking-[0.25em] text-primary focus-visible:ring-1"
         />
         <span className="h-px flex-1 bg-border/60" />
-        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={onRemove}>
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {isFocused && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRemove}
+            title="Remover"
+            aria-label="Remover seção"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     );
   }
