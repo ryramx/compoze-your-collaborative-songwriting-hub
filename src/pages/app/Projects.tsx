@@ -4,6 +4,7 @@ import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { CollaboratorStack } from "@/components/compoze/CollaboratorStack";
+import { NewProjectDialog } from "@/components/compoze/NewProjectDialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -17,9 +18,11 @@ export default function Projects() {
           <h1 className="font-display text-3xl font-bold">Projetos</h1>
           <p className="text-sm text-muted-foreground">EPs, álbuns e singles que você está produzindo.</p>
         </div>
-        <Button className="rounded-full bg-gradient-hero text-primary-foreground shadow-glow">
-          <Plus className="h-4 w-4" /> Novo projeto
-        </Button>
+        <NewProjectDialog>
+          <Button className="rounded-full bg-gradient-hero text-primary-foreground shadow-glow">
+            <Plus className="h-4 w-4" /> Novo projeto
+          </Button>
+        </NewProjectDialog>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
