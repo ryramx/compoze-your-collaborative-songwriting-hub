@@ -1,5 +1,5 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { Sparkles } from "lucide-react";
+import { ChevronLeft, Sparkles } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ export default function AppLayout() {
   const title =
     titles[location.pathname] || titles[baseKey] || "Compoze";
   const me = useCompoze((s) => s.users.find((u) => u.id === s.currentUserId));
+  const canGoBack = location.pathname !== "/";
 
   return (
     <SidebarProvider defaultOpen>
@@ -39,6 +40,17 @@ export default function AppLayout() {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/60 bg-background/75 px-4 backdrop-blur-xl md:px-6">
             <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+            {canGoBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate(-1)}
+                aria-label="Voltar"
+                className="rounded-full text-muted-foreground hover:text-foreground"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            )}
             <div className="hidden md:flex flex-col">
               <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
                 Compoze
