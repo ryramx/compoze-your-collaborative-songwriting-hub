@@ -827,7 +827,7 @@ function EditorBlock({
       <div className="flex items-start gap-2">
         {/* Decorative type icon — hidden on mobile */}
         <div className={cn(
-          "mt-2 hidden h-6 w-6 place-items-center rounded-md md:grid",
+          "mt-1 hidden h-6 w-6 place-items-center rounded-md md:grid",
           `bg-author-${authorColor}/15 text-author-${authorColor}`,
         )}>
           <Icon className="h-3 w-3" />
@@ -859,7 +859,7 @@ function EditorBlock({
                 : "Letra…"
             }
             className={cn(
-              "min-h-[2.5rem] resize-none overflow-hidden whitespace-pre-wrap break-words border-0 bg-transparent px-2 py-2 text-base leading-relaxed focus-visible:ring-1 focus-visible:ring-offset-0",
+              "min-h-[1.75rem] resize-none overflow-hidden whitespace-pre-wrap break-words border-0 bg-transparent px-2 py-1 text-base leading-snug focus-visible:ring-1 focus-visible:ring-offset-0",
               block.type === "chord-line" && "chord text-primary font-semibold",
               block.type === "note" && "italic text-muted-foreground",
               block.type === "lyric-line" && "pl-8",
@@ -891,7 +891,7 @@ function EditorBlock({
           <Button
             variant="ghost"
             size="icon"
-            className="mt-2 h-6 w-6"
+            className="mt-1 h-6 w-6"
             onMouseDown={(e) => e.preventDefault()}
             onClick={onRemove}
             title="Remover"
