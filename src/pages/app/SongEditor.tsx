@@ -14,6 +14,8 @@ import {
   Tag,
   X,
   Check,
+  Undo2,
+  Redo2,
 } from "lucide-react";
 import { useCompoze } from "@/store/compozeStore";
 import { Button } from "@/components/ui/button";
@@ -92,6 +94,118 @@ export default function SongEditor() {
   const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
   const blocksAreaRef = useRef<HTMLDivElement>(null);
   const blocksEndRef = useRef<HTMLDivElement>(null);
+
+  // ---------- Undo / Redo history ----------
+  // We snapshot the editable parts of the song (blocks + title + metadata fields)
+  // with a small debounce so each "edit burst" becomes a single history entry.
+  type Snapshot = {
+    title: string;
+    blocks: SongBlock[];
+    key?: string;
+    bpm?: number;
+    timeSignature?: string;
+    tags?: string[];
+  };
+  const historyRef = useRef<Snapshot[]>([]);
+  const futureRef = useRef<Snapshot[]>([]);
+  const isApplyingHistoryRef = useRef(false);
+  const lastSnapshotRef = useRef<string>("");
+  const [, forceHistoryRender] = useState(0);
+  const bumpHistoryUI = () => forceHistoryRender((n) => n + 1);
+
+  useEffect(() => {
+    if (!song) return;
+    if (isApplyingHistoryRef.current) {
+      isApplyingHistoryRef.current = false;
+      return;
+    }
+    const snap: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const serialized = JSON.stringify(snap);
+    if (serialized === lastSnapshotRef.current) return;
+    // debounce: collapse rapid changes into one entry
+    const t = setTimeout(() => {
+      historyRef.current.push(JSON.parse(lastSnapshotRef.current || serialized));
+      // Cap history size
+      if (historyRef.current.length > 100) historyRef.current.shift();
+      lastSnapshotRef.current = serialized;
+      futureRef.current = [];
+      bumpHistoryUI();
+    }, 400);
+    return () => clearTimeout(t);
+  }, [song?.title, song?.blocks, song?.key, song?.bpm, song?.timeSignature, song?.tags]);
+
+  const applySnapshot = (snap: Snapshot) => {
+    if (!song) return;
+    isApplyingHistoryRef.current = true;
+    updateSong(song.id, {
+      title: snap.title,
+      blocks: snap.blocks,
+      key: snap.key,
+      bpm: snap.bpm,
+      timeSignature: snap.timeSignature,
+      tags: snap.tags,
+    });
+    lastSnapshotRef.current = JSON.stringify(snap);
+  };
+
+  const handleUndo = () => {
+    if (!song || historyRef.current.length === 0) return;
+    const current: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const prev = historyRef.current.pop()!;
+    futureRef.current.push(current);
+    applySnapshot(prev);
+    bumpHistoryUI();
+  };
+  const handleRedo = () => {
+    if (!song || futureRef.current.length === 0) return;
+    const current: Snapshot = {
+      title: song.title,
+      blocks: song.blocks,
+      key: song.key,
+      bpm: song.bpm,
+      timeSignature: song.timeSignature,
+      tags: song.tags,
+    };
+    const next = futureRef.current.pop()!;
+    historyRef.current.push(current);
+    applySnapshot(next);
+    bumpHistoryUI();
+  };
+
+  // Keyboard shortcuts: Ctrl/Cmd+Z and Ctrl/Cmd+Shift+Z
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod) return;
+      if (e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        if (e.shiftKey) handleRedo();
+        else handleUndo();
+      } else if (e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        handleRedo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  const canUndo = historyRef.current.length > 0;
+  const canRedo = futureRef.current.length > 0;
 
   // Show floating toolbar while user is scrolling within the writing area.
   // On mobile/tablet (<md) we keep it visible whenever the writing area is
@@ -213,6 +327,32 @@ export default function SongEditor() {
           onChange={(e) => updateSong(song.id, { title: e.target.value })}
           className="h-9 max-w-[12rem] flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:max-w-xs md:text-lg"
         />
+
+        {/* Undo / Redo */}
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            title="Desfazer (Ctrl/Cmd+Z)"
+            aria-label="Desfazer"
+          >
+            <Undo2 className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 rounded-full"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            title="Refazer (Ctrl/Cmd+Shift+Z)"
+            aria-label="Refazer"
+          >
+            <Redo2 className="h-4 w-4" />
+          </Button>
+        </div>
 
         {/* Saving indicator */}
         <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
@@ -397,6 +537,10 @@ export default function SongEditor() {
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
                 onFocus={() => setFocusedBlockId(b.id)}
+                onBlur={() =>
+                  setFocusedBlockId((cur) => (cur === b.id ? null : cur))
+                }
+                isFocused={focusedBlockId === b.id}
                 shouldFocus={pendingFocusId === b.id}
                 onFocusHandled={() => setPendingFocusId(null)}
                 onEnter={() => {
@@ -595,6 +739,8 @@ function EditorBlock({
   cursors,
   getUser,
   onFocus,
+  onBlur,
+  isFocused,
   shouldFocus,
   onFocusHandled,
   onEnter,
@@ -609,6 +755,8 @@ function EditorBlock({
   cursors: FakeCursor[];
   getUser: (id: string) => any;
   onFocus?: () => void;
+  onBlur?: () => void;
+  isFocused?: boolean;
   shouldFocus?: boolean;
   onFocusHandled?: () => void;
   onEnter?: () => void;
@@ -645,6 +793,7 @@ function EditorBlock({
           value={block.label ?? ""}
           onChange={(e) => onLabel(e.target.value)}
           onFocus={onFocus}
+          onBlur={onBlur}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -655,9 +804,19 @@ function EditorBlock({
           className="h-7 max-w-xs border-0 bg-transparent px-1 text-xs uppercase tracking-[0.25em] text-primary focus-visible:ring-1"
         />
         <span className="h-px flex-1 bg-border/60" />
-        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={onRemove}>
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {isFocused && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRemove}
+            title="Remover"
+            aria-label="Remover seção"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     );
   }
@@ -679,6 +838,7 @@ function EditorBlock({
             value={block.text}
             onChange={(e) => onChange(e.target.value)}
             onFocus={onFocus}
+            onBlur={onBlur}
             onKeyDown={(e) => {
               // Enter inserts a new lyric line below for lyric/note (no Shift)
               if (
@@ -727,15 +887,19 @@ function EditorBlock({
             );
           })}
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="mt-2 h-6 w-6 opacity-0 group-hover:opacity-100"
-          onClick={onRemove}
-          title="Remover"
-        >
-          <Trash2 className="h-3 w-3" />
-        </Button>
+        {isFocused && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="mt-2 h-6 w-6"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={onRemove}
+            title="Remover"
+            aria-label="Remover bloco"
+          >
+            <Trash2 className="h-3 w-3" />
+          </Button>
+        )}
       </div>
       {!isMine && (
         <div className="ml-2 -mt-1 text-[10px] text-muted-foreground md:ml-8">
