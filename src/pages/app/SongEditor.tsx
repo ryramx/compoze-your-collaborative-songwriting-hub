@@ -94,6 +94,10 @@ export default function SongEditor() {
   const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
   const blocksAreaRef = useRef<HTMLDivElement>(null);
   const blocksEndRef = useRef<HTMLDivElement>(null);
+  // Keep track of the last block the user was editing, even after blur
+  // (e.g. when they tap a toolbar button which momentarily steals focus).
+  // This is what we use to decide WHERE to insert a new block.
+  const lastFocusedBlockIdRef = useRef<string | null>(null);
 
   // ---------- Undo / Redo history ----------
   // We snapshot the editable parts of the song (blocks + title + metadata fields)
@@ -207,47 +211,19 @@ export default function SongEditor() {
   const canUndo = historyRef.current.length > 0;
   const canRedo = futureRef.current.length > 0;
 
-  // Show floating toolbar while user is scrolling within the writing area.
-  // On mobile/tablet (<md) we keep it visible whenever the writing area is
-  // on screen — even if the on-screen keyboard opens (which would otherwise
-  // make the end-sentinel "appear" visible and hide the bar). On desktop
-  // we still hide it once the end of the writing area is reached so the
-  // inline toolbar takes over and the rest of the page is reachable.
+  // Floating toolbar: stays visible whenever the writing area itself is on
+  // screen, regardless of breakpoint or scroll position. This guarantees the
+  // user can always insert a new block without scrolling back to find a
+  // toolbar — the bar effectively follows them while they edit.
   useEffect(() => {
     const area = blocksAreaRef.current;
-    const end = blocksEndRef.current;
-    if (!area || !end) return;
-
-    let areaVisible = false;
-    let endVisible = false;
-    const isDesktop = () =>
-      typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
-    const update = () =>
-      setShowFloatingToolbar(areaVisible && (!isDesktop() || !endVisible));
-
-    const areaObs = new IntersectionObserver(
-      ([entry]) => {
-        areaVisible = entry.isIntersecting;
-        update();
-      },
+    if (!area) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowFloatingToolbar(entry.isIntersecting),
       { threshold: 0 },
     );
-    const endObs = new IntersectionObserver(
-      ([entry]) => {
-        endVisible = entry.isIntersecting;
-        update();
-      },
-      { threshold: 0 },
-    );
-    areaObs.observe(area);
-    endObs.observe(end);
-    const onResize = () => update();
-    window.addEventListener("resize", onResize);
-    return () => {
-      areaObs.disconnect();
-      endObs.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
+    obs.observe(area);
+    return () => obs.disconnect();
   }, [song?.id]);
 
   useEffect(() => {
