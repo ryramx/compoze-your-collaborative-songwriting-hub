@@ -660,28 +660,7 @@ export default function SongEditor() {
       >
         <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
           <BlockInsertButtons
-            onInsert={(type) => {
-              const newBlock = {
-                type,
-                label: type === "section" ? "Nova seção" : undefined,
-                text: "",
-                authorId: me.id,
-              };
-              const focused = focusedBlockId
-                ? song.blocks.find((b) => b.id === focusedBlockId)
-                : undefined;
-              let options: { afterId?: string; beforeId?: string } | undefined;
-              if (focused) {
-                if (type === "chord-line") {
-                  options = { beforeId: focused.id };
-                } else {
-                  options = { afterId: focused.id };
-                }
-              }
-              const newId = insertBlock(song.id, newBlock, options);
-              setPendingFocusId(newId);
-              setFocusedBlockId(newId);
-            }}
+            onInsert={(type) => handleInsertBlock(type)}
           />
         </div>
       </div>
