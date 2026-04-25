@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
-import { StatusBadge } from "@/components/compoze/StatusBadge";
 import type { SongBlock, SongStatus } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
