@@ -243,18 +243,39 @@ export default function SongEditor() {
   const canRedo = futureRef.current.length > 0;
 
   // Floating toolbar: stays visible whenever the writing area itself is on
-  // screen, regardless of breakpoint or scroll position. This guarantees the
-  // user can always insert a new block without scrolling back to find a
-  // toolbar — the bar effectively follows them while they edit.
+  // screen AND the user has not yet scrolled past the end of the blocks.
+  // When the end-of-writing sentinel becomes visible, we hide the floating
+  // bar so the inline toolbar takes over, keeping the bottom of the page
+  // (coautoria, compartilhar, excluir) free of overlap.
   useEffect(() => {
     const area = blocksAreaRef.current;
-    if (!area) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setShowFloatingToolbar(entry.isIntersecting),
+    const end = blocksEndRef.current;
+    if (!area || !end) return;
+    let areaVisible = false;
+    let endVisible = false;
+    const update = () => setShowFloatingToolbar(areaVisible && !endVisible);
+    const areaObs = new IntersectionObserver(
+      ([entry]) => {
+        areaVisible = entry.isIntersecting;
+        update();
+      },
       { threshold: 0 },
     );
-    obs.observe(area);
-    return () => obs.disconnect();
+    const endObs = new IntersectionObserver(
+      ([entry]) => {
+        endVisible = entry.isIntersecting;
+        update();
+      },
+      // Trigger a bit before the sentinel so the floating bar releases
+      // before it overlaps the coautoria / actions area.
+      { rootMargin: "0px 0px -120px 0px", threshold: 0 },
+    );
+    areaObs.observe(area);
+    endObs.observe(end);
+    return () => {
+      areaObs.disconnect();
+      endObs.disconnect();
+    };
   }, [song?.id]);
 
   useEffect(() => {
