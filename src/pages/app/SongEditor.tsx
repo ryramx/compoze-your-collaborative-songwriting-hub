@@ -66,24 +66,6 @@ const timeSignatureOptions: string[] = [
   "2/4", "3/4", "4/4", "6/8", "9/8", "12/8", "5/4", "7/8",
 ];
 
-// Standardized BPM options grouped by tempo category
-const bpmOptions: { value: number; label: string }[] = [
-  { value: 60, label: "60 — Largo" },
-  { value: 70, label: "70 — Adagio" },
-  { value: 80, label: "80 — Andante" },
-  { value: 90, label: "90 — Andante" },
-  { value: 100, label: "100 — Moderato" },
-  { value: 110, label: "110 — Moderato" },
-  { value: 120, label: "120 — Allegro" },
-  { value: 130, label: "130 — Allegro" },
-  { value: 140, label: "140 — Vivace" },
-  { value: 150, label: "150 — Vivace" },
-  { value: 160, label: "160 — Presto" },
-  { value: 170, label: "170 — Presto" },
-  { value: 180, label: "180 — Prestissimo" },
-  { value: 200, label: "200 — Prestissimo" },
-];
-
 const blockTypeIcon = {
   section: Hash,
   "chord-line": Music2,
