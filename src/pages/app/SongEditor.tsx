@@ -516,22 +516,27 @@ export default function SongEditor() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Andamento (BPM)</div>
-                <Select
-                  value={song.bpm ? String(song.bpm) : ""}
-                  onValueChange={(v) => updateSong(song.id, { bpm: Number(v) || undefined })}
-                >
-                  <SelectTrigger className="h-9 rounded-lg border-border/60 bg-background/40 font-mono text-sm">
-                    <SelectValue placeholder="120" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {bpmOptions.map((b) => (
-                      <SelectItem key={b.value} value={String(b.value)} className="font-mono">
-                        {b.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">BPM</div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={20}
+                    max={300}
+                    value={song.bpm ?? ""}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      updateSong(song.id, {
+                        bpm: Number.isFinite(n) && n > 0 ? n : undefined,
+                      });
+                    }}
+                    placeholder="120"
+                    className="h-9 rounded-lg border-border/60 bg-background/40 pr-10 font-mono text-sm"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                    bpm
+                  </span>
+                </div>
               </div>
             </div>
 
