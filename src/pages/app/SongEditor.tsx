@@ -290,6 +290,37 @@ export default function SongEditor() {
     navigate("/songs");
   };
 
+  // Context-aware block insertion based on the user's cursor position.
+  // - Section focused: insert NEW block (any type) BELOW the section.
+  // - Lyric line focused + inserting chords: insert ABOVE (chord must
+  //   sit above the lyric it relates to, for visual alignment).
+  // - Any other case: insert BELOW the focused block.
+  // - No focus at all: append at the end (fallback).
+  const handleInsertBlock = (
+    type: "section" | "chord-line" | "lyric-line" | "note",
+  ) => {
+    const newBlock = {
+      type,
+      label: type === "section" ? "Nova seção" : undefined,
+      text: "",
+      authorId: me.id,
+    };
+    const anchorId = focusedBlockId ?? lastFocusedBlockIdRef.current;
+    const anchor = anchorId ? song.blocks.find((b) => b.id === anchorId) : undefined;
+    let options: { afterId?: string; beforeId?: string } | undefined;
+    if (anchor) {
+      if (type === "chord-line" && anchor.type === "lyric-line") {
+        options = { beforeId: anchor.id };
+      } else {
+        options = { afterId: anchor.id };
+      }
+    }
+    const newId = insertBlock(song.id, newBlock, options);
+    setPendingFocusId(newId);
+    setFocusedBlockId(newId);
+    lastFocusedBlockIdRef.current = newId;
+  };
+
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
       {/* Toolbar — desktop only decorative bits */}
