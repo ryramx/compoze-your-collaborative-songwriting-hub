@@ -356,20 +356,26 @@ export default function SongEditor() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
-      {/* Toolbar — desktop only decorative bits */}
-      <div className="sticky top-16 z-20 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur-xl md:px-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/songs")}>
-          <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Canções</span>
+      {/* Document toolbar — flush with the global top header */}
+      <div className="sticky top-16 z-20 flex items-center gap-2 border-b border-border/60 bg-background/90 px-3 py-2.5 backdrop-blur-xl md:gap-3 md:px-6 md:py-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-full"
+          onClick={() => navigate("/songs")}
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Button>
 
         <Input
           value={song.title}
           onChange={(e) => updateSong(song.id, { title: e.target.value })}
-          className="h-9 max-w-[12rem] flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:max-w-xs md:text-lg"
+          className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:text-lg"
         />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -394,8 +400,17 @@ export default function SongEditor() {
           </Button>
         </div>
 
+        {/* Mobile live indicator */}
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-author-3/10 px-2 py-1 text-[10px] font-medium text-author-3 md:hidden">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-author-3" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-author-3" />
+          </span>
+          {song.collaborators.length}
+        </div>
+
         {/* Saving indicator */}
-        <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
           <span className={cn("relative flex h-1.5 w-1.5", savingPulse && "animate-pulse")}>
             <span className="absolute inline-flex h-full w-full rounded-full bg-status-finalizada/60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-finalizada" />
@@ -403,7 +418,7 @@ export default function SongEditor() {
           <span className="hidden sm:inline">{savingPulse ? "Salvando…" : "Salvo"}</span>
         </div>
 
-        <div className="ml-auto hidden items-center gap-3 md:flex">
+        <div className="ml-1 hidden items-center gap-3 md:flex">
           <Select
             value={song.status}
             onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
