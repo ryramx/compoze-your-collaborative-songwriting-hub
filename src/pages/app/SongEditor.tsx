@@ -39,7 +39,6 @@ import {
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
 import { UserAvatar } from "@/components/compoze/UserAvatar";
-import { StatusBadge } from "@/components/compoze/StatusBadge";
 import type { SongBlock, SongStatus } from "@/data/types";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -52,6 +51,37 @@ const statusOptions: { value: SongStatus; label: string }[] = [
   { value: "finalizada", label: "Finalizada" },
   { value: "registrada", label: "Registrada" },
   { value: "gravada", label: "Gravada" },
+];
+
+// Standardized musical key options (major + minor)
+const keyOptions: string[] = [
+  "C", "C#", "Db", "D", "D#", "Eb", "E", "F", "F#", "Gb",
+  "G", "G#", "Ab", "A", "A#", "Bb", "B",
+  "Cm", "C#m", "Dbm", "Dm", "D#m", "Ebm", "Em", "Fm", "F#m", "Gbm",
+  "Gm", "G#m", "Abm", "Am", "A#m", "Bbm", "Bm",
+];
+
+// Standardized time signature options (andamento / compasso)
+const timeSignatureOptions: string[] = [
+  "2/4", "3/4", "4/4", "6/8", "9/8", "12/8", "5/4", "7/8",
+];
+
+// Standardized BPM options grouped by tempo category
+const bpmOptions: { value: number; label: string }[] = [
+  { value: 60, label: "60 — Largo" },
+  { value: 70, label: "70 — Adagio" },
+  { value: 80, label: "80 — Andante" },
+  { value: 90, label: "90 — Andante" },
+  { value: 100, label: "100 — Moderato" },
+  { value: 110, label: "110 — Moderato" },
+  { value: 120, label: "120 — Allegro" },
+  { value: 130, label: "130 — Allegro" },
+  { value: 140, label: "140 — Vivace" },
+  { value: 150, label: "150 — Vivace" },
+  { value: 160, label: "160 — Presto" },
+  { value: 170, label: "170 — Presto" },
+  { value: 180, label: "180 — Prestissimo" },
+  { value: 200, label: "200 — Prestissimo" },
 ];
 
 const blockTypeIcon = {
@@ -212,18 +242,39 @@ export default function SongEditor() {
   const canRedo = futureRef.current.length > 0;
 
   // Floating toolbar: stays visible whenever the writing area itself is on
-  // screen, regardless of breakpoint or scroll position. This guarantees the
-  // user can always insert a new block without scrolling back to find a
-  // toolbar — the bar effectively follows them while they edit.
+  // screen AND the user has not yet scrolled past the end of the blocks.
+  // When the end-of-writing sentinel becomes visible, we hide the floating
+  // bar so the inline toolbar takes over, keeping the bottom of the page
+  // (coautoria, compartilhar, excluir) free of overlap.
   useEffect(() => {
     const area = blocksAreaRef.current;
-    if (!area) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => setShowFloatingToolbar(entry.isIntersecting),
+    const end = blocksEndRef.current;
+    if (!area || !end) return;
+    let areaVisible = false;
+    let endVisible = false;
+    const update = () => setShowFloatingToolbar(areaVisible && !endVisible);
+    const areaObs = new IntersectionObserver(
+      ([entry]) => {
+        areaVisible = entry.isIntersecting;
+        update();
+      },
       { threshold: 0 },
     );
-    obs.observe(area);
-    return () => obs.disconnect();
+    const endObs = new IntersectionObserver(
+      ([entry]) => {
+        endVisible = entry.isIntersecting;
+        update();
+      },
+      // Trigger a bit before the sentinel so the floating bar releases
+      // before it overlaps the coautoria / actions area.
+      { rootMargin: "0px 0px -120px 0px", threshold: 0 },
+    );
+    areaObs.observe(area);
+    endObs.observe(end);
+    return () => {
+      areaObs.disconnect();
+      endObs.disconnect();
+    };
   }, [song?.id]);
 
   useEffect(() => {
@@ -370,13 +421,12 @@ export default function SongEditor() {
           <span className="hidden sm:inline">{savingPulse ? "Salvando…" : "Salvo"}</span>
         </div>
 
-        <div className="ml-auto hidden items-center gap-2 md:flex">
-          <StatusBadge status={song.status} />
+        <div className="ml-auto hidden items-center gap-3 md:flex">
           <Select
             value={song.status}
             onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
           >
-            <SelectTrigger className="h-8 w-32 rounded-full border-border/60 bg-muted/40 text-xs">
+            <SelectTrigger className="h-8 w-36 rounded-full border-border/60 bg-muted/40 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -438,53 +488,79 @@ export default function SongEditor() {
       <div className="flex-1">
         <div className="mx-auto max-w-3xl p-4 md:p-10">
           {/* Metadata header */}
-          <Card className="mb-6 border-border/60 bg-gradient-card p-4 md:p-5">
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Autor</div>
-                <div className="flex items-center gap-2 truncate text-sm font-medium">
+          <Card className="mb-6 border-border/60 bg-gradient-card p-5 md:p-6">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
+              <div className="space-y-1.5">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Autor</div>
+                <div className="flex h-9 items-center gap-2 truncate text-sm font-medium">
                   <UserAvatar user={getUser(song.creatorId)} size="sm" />
                   <span className="truncate">{getUser(song.creatorId)?.name}</span>
                 </div>
               </div>
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Tom</div>
-                <Input
+              <div className="space-y-1.5">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Tom</div>
+                <Select
                   value={song.key ?? ""}
-                  onChange={(e) => updateSong(song.id, { key: e.target.value })}
-                  placeholder="Ex: Am"
-                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
-                />
+                  onValueChange={(v) => updateSong(song.id, { key: v })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-border/60 bg-background/40 font-mono text-sm">
+                    <SelectValue placeholder="Ex: Am" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {keyOptions.map((k) => (
+                      <SelectItem key={k} value={k} className="font-mono">
+                        {k}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">Andamento</div>
-                <Input
+              <div className="space-y-1.5">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Compasso</div>
+                <Select
                   value={song.timeSignature ?? "4/4"}
-                  onChange={(e) => updateSong(song.id, { timeSignature: e.target.value })}
-                  placeholder="4/4"
-                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
-                />
+                  onValueChange={(v) => updateSong(song.id, { timeSignature: v })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-border/60 bg-background/40 font-mono text-sm">
+                    <SelectValue placeholder="4/4" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {timeSignatureOptions.map((t) => (
+                      <SelectItem key={t} value={t} className="font-mono">
+                        {t}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div>
-                <div className="mb-1 text-[10px] uppercase tracking-widest text-muted-foreground">BPM</div>
-                <Input
-                  type="number"
-                  value={song.bpm ?? ""}
-                  onChange={(e) => updateSong(song.id, { bpm: Number(e.target.value) || undefined })}
-                  placeholder="120"
-                  className="h-9 rounded-lg bg-background/40 font-mono text-sm"
-                />
+              <div className="space-y-1.5">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Andamento (BPM)</div>
+                <Select
+                  value={song.bpm ? String(song.bpm) : ""}
+                  onValueChange={(v) => updateSong(song.id, { bpm: Number(v) || undefined })}
+                >
+                  <SelectTrigger className="h-9 rounded-lg border-border/60 bg-background/40 font-mono text-sm">
+                    <SelectValue placeholder="120" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-72">
+                    {bpmOptions.map((b) => (
+                      <SelectItem key={b.value} value={String(b.value)} className="font-mono">
+                        {b.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
             {/* Mobile status select */}
-            <div className="mt-3 flex items-center gap-2 md:hidden">
-              <StatusBadge status={song.status} />
+            <div className="mt-5 md:hidden">
+              <div className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">Status</div>
               <Select
                 value={song.status}
                 onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
               >
-                <SelectTrigger className="h-8 flex-1 rounded-full border-border/60 bg-background/40 text-xs">
+                <SelectTrigger className="h-9 w-full rounded-full border-border/60 bg-background/40 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -498,7 +574,7 @@ export default function SongEditor() {
             </div>
 
             {/* Tags */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border/40 pt-4">
               <Tag className="h-3.5 w-3.5 text-muted-foreground" />
               {tags.map((t) => (
                 <span
