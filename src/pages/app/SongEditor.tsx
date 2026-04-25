@@ -94,6 +94,10 @@ export default function SongEditor() {
   const [showFloatingToolbar, setShowFloatingToolbar] = useState(false);
   const blocksAreaRef = useRef<HTMLDivElement>(null);
   const blocksEndRef = useRef<HTMLDivElement>(null);
+  // Keep track of the last block the user was editing, even after blur
+  // (e.g. when they tap a toolbar button which momentarily steals focus).
+  // This is what we use to decide WHERE to insert a new block.
+  const lastFocusedBlockIdRef = useRef<string | null>(null);
 
   // ---------- Undo / Redo history ----------
   // We snapshot the editable parts of the song (blocks + title + metadata fields)
@@ -207,47 +211,19 @@ export default function SongEditor() {
   const canUndo = historyRef.current.length > 0;
   const canRedo = futureRef.current.length > 0;
 
-  // Show floating toolbar while user is scrolling within the writing area.
-  // On mobile/tablet (<md) we keep it visible whenever the writing area is
-  // on screen — even if the on-screen keyboard opens (which would otherwise
-  // make the end-sentinel "appear" visible and hide the bar). On desktop
-  // we still hide it once the end of the writing area is reached so the
-  // inline toolbar takes over and the rest of the page is reachable.
+  // Floating toolbar: stays visible whenever the writing area itself is on
+  // screen, regardless of breakpoint or scroll position. This guarantees the
+  // user can always insert a new block without scrolling back to find a
+  // toolbar — the bar effectively follows them while they edit.
   useEffect(() => {
     const area = blocksAreaRef.current;
-    const end = blocksEndRef.current;
-    if (!area || !end) return;
-
-    let areaVisible = false;
-    let endVisible = false;
-    const isDesktop = () =>
-      typeof window !== "undefined" && window.matchMedia("(min-width: 768px)").matches;
-    const update = () =>
-      setShowFloatingToolbar(areaVisible && (!isDesktop() || !endVisible));
-
-    const areaObs = new IntersectionObserver(
-      ([entry]) => {
-        areaVisible = entry.isIntersecting;
-        update();
-      },
+    if (!area) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setShowFloatingToolbar(entry.isIntersecting),
       { threshold: 0 },
     );
-    const endObs = new IntersectionObserver(
-      ([entry]) => {
-        endVisible = entry.isIntersecting;
-        update();
-      },
-      { threshold: 0 },
-    );
-    areaObs.observe(area);
-    endObs.observe(end);
-    const onResize = () => update();
-    window.addEventListener("resize", onResize);
-    return () => {
-      areaObs.disconnect();
-      endObs.disconnect();
-      window.removeEventListener("resize", onResize);
-    };
+    obs.observe(area);
+    return () => obs.disconnect();
   }, [song?.id]);
 
   useEffect(() => {
@@ -312,6 +288,37 @@ export default function SongEditor() {
     deleteSong(song.id);
     toast.success("Canção movida para a Lixeira");
     navigate("/songs");
+  };
+
+  // Context-aware block insertion based on the user's cursor position.
+  // - Section focused: insert NEW block (any type) BELOW the section.
+  // - Lyric line focused + inserting chords: insert ABOVE (chord must
+  //   sit above the lyric it relates to, for visual alignment).
+  // - Any other case: insert BELOW the focused block.
+  // - No focus at all: append at the end (fallback).
+  const handleInsertBlock = (
+    type: "section" | "chord-line" | "lyric-line" | "note",
+  ) => {
+    const newBlock = {
+      type,
+      label: type === "section" ? "Nova seção" : undefined,
+      text: "",
+      authorId: me.id,
+    };
+    const anchorId = focusedBlockId ?? lastFocusedBlockIdRef.current;
+    const anchor = anchorId ? song.blocks.find((b) => b.id === anchorId) : undefined;
+    let options: { afterId?: string; beforeId?: string } | undefined;
+    if (anchor) {
+      if (type === "chord-line" && anchor.type === "lyric-line") {
+        options = { beforeId: anchor.id };
+      } else {
+        options = { afterId: anchor.id };
+      }
+    }
+    const newId = insertBlock(song.id, newBlock, options);
+    setPendingFocusId(newId);
+    setFocusedBlockId(newId);
+    lastFocusedBlockIdRef.current = newId;
   };
 
   return (
@@ -536,7 +543,10 @@ export default function SongEditor() {
                 onRemove={() => removeBlock(song.id, b.id)}
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
-                onFocus={() => setFocusedBlockId(b.id)}
+                onFocus={() => {
+                  setFocusedBlockId(b.id);
+                  lastFocusedBlockIdRef.current = b.id;
+                }}
                 onBlur={() =>
                   setFocusedBlockId((cur) => (cur === b.id ? null : cur))
                 }
@@ -565,28 +575,7 @@ export default function SongEditor() {
             )}
           >
             <BlockInsertButtons
-              onInsert={(type) => {
-                const newBlock = {
-                  type,
-                  label: type === "section" ? "Nova seção" : undefined,
-                  text: "",
-                  authorId: me.id,
-                };
-                const focused = focusedBlockId
-                  ? song.blocks.find((b) => b.id === focusedBlockId)
-                  : undefined;
-                let options: { afterId?: string; beforeId?: string } | undefined;
-                if (focused) {
-                  if (type === "chord-line") {
-                    options = { beforeId: focused.id };
-                  } else {
-                    options = { afterId: focused.id };
-                  }
-                }
-                const newId = insertBlock(song.id, newBlock, options);
-                setPendingFocusId(newId);
-                setFocusedBlockId(newId);
-              }}
+              onInsert={(type) => handleInsertBlock(type)}
             />
           </div>
 
@@ -671,28 +660,7 @@ export default function SongEditor() {
       >
         <div className="mx-auto flex max-w-3xl flex-wrap justify-center gap-2">
           <BlockInsertButtons
-            onInsert={(type) => {
-              const newBlock = {
-                type,
-                label: type === "section" ? "Nova seção" : undefined,
-                text: "",
-                authorId: me.id,
-              };
-              const focused = focusedBlockId
-                ? song.blocks.find((b) => b.id === focusedBlockId)
-                : undefined;
-              let options: { afterId?: string; beforeId?: string } | undefined;
-              if (focused) {
-                if (type === "chord-line") {
-                  options = { beforeId: focused.id };
-                } else {
-                  options = { afterId: focused.id };
-                }
-              }
-              const newId = insertBlock(song.id, newBlock, options);
-              setPendingFocusId(newId);
-              setFocusedBlockId(newId);
-            }}
+            onInsert={(type) => handleInsertBlock(type)}
           />
         </div>
       </div>
@@ -719,6 +687,7 @@ function BlockInsertButtons({
           size="sm"
           variant="outline"
           className="rounded-full border-border/60 bg-background/40"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onInsert(t.type)}
         >
           <t.icon className="h-3.5 w-3.5" /> {t.label}
