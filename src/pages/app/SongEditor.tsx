@@ -543,7 +543,10 @@ export default function SongEditor() {
                 onRemove={() => removeBlock(song.id, b.id)}
                 cursors={cursors.filter((c) => c.blockId === b.id)}
                 getUser={getUser}
-                onFocus={() => setFocusedBlockId(b.id)}
+                onFocus={() => {
+                  setFocusedBlockId(b.id);
+                  lastFocusedBlockIdRef.current = b.id;
+                }}
                 onBlur={() =>
                   setFocusedBlockId((cur) => (cur === b.id ? null : cur))
                 }
