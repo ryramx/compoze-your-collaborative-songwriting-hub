@@ -422,13 +422,12 @@ export default function SongEditor() {
           <span className="hidden sm:inline">{savingPulse ? "Salvando…" : "Salvo"}</span>
         </div>
 
-        <div className="ml-auto hidden items-center gap-2 md:flex">
-          <StatusBadge status={song.status} />
+        <div className="ml-auto hidden items-center gap-3 md:flex">
           <Select
             value={song.status}
             onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
           >
-            <SelectTrigger className="h-8 w-32 rounded-full border-border/60 bg-muted/40 text-xs">
+            <SelectTrigger className="h-8 w-36 rounded-full border-border/60 bg-muted/40 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
