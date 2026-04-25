@@ -66,24 +66,6 @@ const timeSignatureOptions: string[] = [
   "2/4", "3/4", "4/4", "6/8", "9/8", "12/8", "5/4", "7/8",
 ];
 
-// Standardized BPM options grouped by tempo category
-const bpmOptions: { value: number; label: string }[] = [
-  { value: 60, label: "60 — Largo" },
-  { value: 70, label: "70 — Adagio" },
-  { value: 80, label: "80 — Andante" },
-  { value: 90, label: "90 — Andante" },
-  { value: 100, label: "100 — Moderato" },
-  { value: 110, label: "110 — Moderato" },
-  { value: 120, label: "120 — Allegro" },
-  { value: 130, label: "130 — Allegro" },
-  { value: 140, label: "140 — Vivace" },
-  { value: 150, label: "150 — Vivace" },
-  { value: 160, label: "160 — Presto" },
-  { value: 170, label: "170 — Presto" },
-  { value: 180, label: "180 — Prestissimo" },
-  { value: 200, label: "200 — Prestissimo" },
-];
-
 const blockTypeIcon = {
   section: Hash,
   "chord-line": Music2,
@@ -374,20 +356,26 @@ export default function SongEditor() {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] flex-col">
-      {/* Toolbar — desktop only decorative bits */}
-      <div className="sticky top-16 z-20 flex flex-wrap items-center gap-2 border-b border-border/60 bg-background/85 px-4 py-3 backdrop-blur-xl md:px-6">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/songs")}>
-          <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Canções</span>
+      {/* Document toolbar — flush with the global top header */}
+      <div className="sticky top-16 z-20 flex items-center gap-2 border-b border-border/60 bg-background/90 px-3 py-2.5 backdrop-blur-xl md:gap-3 md:px-6 md:py-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-full"
+          onClick={() => navigate("/songs")}
+          aria-label="Voltar"
+        >
+          <ArrowLeft className="h-4 w-4" />
         </Button>
 
         <Input
           value={song.title}
           onChange={(e) => updateSong(song.id, { title: e.target.value })}
-          className="h-9 max-w-[12rem] flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:max-w-xs md:text-lg"
+          className="h-9 min-w-0 flex-1 border-0 bg-transparent px-2 font-display text-base font-semibold focus-visible:ring-1 md:text-lg"
         />
 
         {/* Undo / Redo */}
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <Button
             variant="ghost"
             size="icon"
@@ -412,8 +400,17 @@ export default function SongEditor() {
           </Button>
         </div>
 
+        {/* Mobile live indicator */}
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-author-3/10 px-2 py-1 text-[10px] font-medium text-author-3 md:hidden">
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-pulse-ring rounded-full bg-author-3" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-author-3" />
+          </span>
+          {song.collaborators.length}
+        </div>
+
         {/* Saving indicator */}
-        <div className="flex items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-1.5 rounded-full bg-muted/40 px-2.5 py-1 text-[10px] text-muted-foreground">
           <span className={cn("relative flex h-1.5 w-1.5", savingPulse && "animate-pulse")}>
             <span className="absolute inline-flex h-full w-full rounded-full bg-status-finalizada/60" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-status-finalizada" />
@@ -421,7 +418,7 @@ export default function SongEditor() {
           <span className="hidden sm:inline">{savingPulse ? "Salvando…" : "Salvo"}</span>
         </div>
 
-        <div className="ml-auto hidden items-center gap-3 md:flex">
+        <div className="ml-1 hidden items-center gap-3 md:flex">
           <Select
             value={song.status}
             onValueChange={(v) => updateSong(song.id, { status: v as SongStatus })}
@@ -486,18 +483,27 @@ export default function SongEditor() {
 
       {/* Editor area */}
       <div className="flex-1">
-        <div className="mx-auto max-w-3xl p-4 md:p-10">
+        <div className="mx-auto max-w-3xl px-4 pb-4 pt-6 md:px-10 md:pb-10 md:pt-8">
           {/* Metadata header */}
-          <Card className="mb-6 border-border/60 bg-gradient-card p-5 md:p-6">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-5">
-              <div className="space-y-1.5">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Autor</div>
-                <div className="flex h-9 items-center gap-2 truncate text-sm font-medium">
-                  <UserAvatar user={getUser(song.creatorId)} size="sm" />
-                  <span className="truncate">{getUser(song.creatorId)?.name}</span>
+          <Card className="mb-6 overflow-hidden border-border/60 bg-gradient-card p-0 shadow-sm md:mb-8">
+            {/* Author strip */}
+            <div className="flex items-center justify-between gap-3 border-b border-border/40 bg-background/30 px-5 py-3 md:px-6">
+              <div className="flex items-center gap-2.5">
+                <UserAvatar user={getUser(song.creatorId)} size="sm" />
+                <div className="flex flex-col leading-tight">
+                  <span className="text-[10px] uppercase tracking-widest text-muted-foreground">Autor</span>
+                  <span className="text-sm font-medium">{getUser(song.creatorId)?.name}</span>
                 </div>
               </div>
-              <div className="space-y-1.5">
+              <div className="hidden items-center gap-1.5 text-[11px] text-muted-foreground sm:flex">
+                <Users className="h-3.5 w-3.5" />
+                {song.collaborators.length} {song.collaborators.length === 1 ? "pessoa" : "pessoas"}
+              </div>
+            </div>
+
+            {/* Musical metadata */}
+            <div className="grid grid-cols-3 gap-0 divide-x divide-border/40 px-0 py-0">
+              <div className="space-y-1.5 p-4 md:p-5">
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Tom</div>
                 <Select
                   value={song.key ?? ""}
@@ -515,7 +521,7 @@ export default function SongEditor() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
+              <div className="space-y-1.5 p-4 md:p-5">
                 <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Compasso</div>
                 <Select
                   value={song.timeSignature ?? "4/4"}
@@ -533,28 +539,33 @@ export default function SongEditor() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Andamento (BPM)</div>
-                <Select
-                  value={song.bpm ? String(song.bpm) : ""}
-                  onValueChange={(v) => updateSong(song.id, { bpm: Number(v) || undefined })}
-                >
-                  <SelectTrigger className="h-9 rounded-lg border-border/60 bg-background/40 font-mono text-sm">
-                    <SelectValue placeholder="120" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-72">
-                    {bpmOptions.map((b) => (
-                      <SelectItem key={b.value} value={String(b.value)} className="font-mono">
-                        {b.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-1.5 p-4 md:p-5">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">BPM</div>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={20}
+                    max={300}
+                    value={song.bpm ?? ""}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      updateSong(song.id, {
+                        bpm: Number.isFinite(n) && n > 0 ? n : undefined,
+                      });
+                    }}
+                    placeholder="120"
+                    className="h-9 rounded-lg border-border/60 bg-background/40 pr-10 font-mono text-sm"
+                  />
+                  <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[10px] uppercase tracking-widest text-muted-foreground">
+                    bpm
+                  </span>
+                </div>
               </div>
             </div>
 
-            {/* Mobile status select */}
-            <div className="mt-5 md:hidden">
+            {/* Mobile status */}
+            <div className="border-t border-border/40 px-5 py-4 md:hidden">
               <div className="mb-1.5 text-[10px] uppercase tracking-widest text-muted-foreground">Status</div>
               <Select
                 value={song.status}
@@ -574,7 +585,7 @@ export default function SongEditor() {
             </div>
 
             {/* Tags */}
-            <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-border/40 pt-4">
+            <div className="flex flex-wrap items-center gap-2 border-t border-border/40 bg-background/20 px-5 py-3 md:px-6">
               <Tag className="h-3.5 w-3.5 text-muted-foreground" />
               {tags.map((t) => (
                 <span
@@ -605,6 +616,7 @@ export default function SongEditor() {
               </div>
             </div>
           </Card>
+
 
           <div ref={blocksAreaRef} className="space-y-0.5">
             {song.blocks.map((b) => (
