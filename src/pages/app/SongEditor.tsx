@@ -687,6 +687,7 @@ function BlockInsertButtons({
           size="sm"
           variant="outline"
           className="rounded-full border-border/60 bg-background/40"
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => onInsert(t.type)}
         >
           <t.icon className="h-3.5 w-3.5" /> {t.label}
